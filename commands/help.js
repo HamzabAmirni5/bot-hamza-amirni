@@ -7,21 +7,16 @@ module.exports = async (sock, chatId, msg, args, commands, userLang) => {
         const commandList = Array.from(commands.keys()).sort();
         const prefix = settings.prefix;
 
-        // 1. Handle Specific Command Help (.help kick)
-        if (args[0] && !commands.has(args[0].toLowerCase())) {
-            // Check if it's a category first, if not, check for command help
-        } else if (args[0]) {
-            const cmd = args[0].toLowerCase();
-            const desc = t(`command_desc.${cmd}`, {}, userLang);
-            if (!desc.startsWith('command_desc.')) {
-                return await sendWithChannelButton(sock, chatId,
-                    `💡 *${t('menu.title', {}, userLang)}:* ${prefix}${cmd}\n\n` +
-                    `📝 *الشرح:* ${desc}\n\n` +
-                    `👤 *المطور:* ${t('common.botOwner', {}, userLang)}`,
-                    msg, {}, userLang
-                );
-            }
-        }
+        const requested = args[0] ? args[0].toLowerCase() : null;
+        const islamicAliases = ['islam', 'islamic', 'deen', 'دين', 'ديني', 'اسلاميات', 'اسلام', 'religion'];
+        const gameAliases = ['games', 'game', 'العاب', 'لعب', 'منيو_لعب', 'menugame'];
+        const funAliases = ['fun', 'dahik', 'ضحك', 'ترفيه', 'نكت'];
+        const downloadAliases = ['download', 'tahmilat', 'tahmil', 'تحميل', 'تيليشارجي'];
+        const toolsAliases = ['tools', 'adawat', 'أدوات', 'وسائل', 'خدمات'];
+        const ownerAliases = ['owner', 'molchi', 'mol-chi', 'المالك', 'المطور'];
+        const generalAliases = ['general', '3am', 'عام', 'نظام', 'سيستم'];
+        const allAliases = ['all', 'allmenu', 'listall', 'كامل', 'كلشي'];
+        const aiAliases = ['ai', 'ذكاء', 'ذكاء_اصطناعي', 'robot', 'bot'];
 
         // 2. Define Category Mappings
         const catMap = {
@@ -63,27 +58,17 @@ module.exports = async (sock, chatId, msg, args, commands, userLang) => {
             `⚡ *UPTIME:* ${days}d ${hours}h ${minutes}m\n` +
             `━━━━━━━━━━━━━━━━━━━\n\n`;
 
-        const requested = args[0] ? args[0].toLowerCase() : null;
-        const islamicAliases = ['islam', 'islamic', 'deen', 'دين', 'ديني', 'اسلاميات', 'اسلام', 'religion'];
-        const gameAliases = ['games', 'game', 'العاب', 'لعب', 'منيو_لعب', 'menugame'];
-        const funAliases = ['fun', 'dahik', 'ضحك', 'ترفيه', 'نكت'];
-        const downloadAliases = ['download', 'tahmilat', 'tahmil', 'تحميل', 'تيليشارجي'];
-        const toolsAliases = ['tools', 'adawat', 'أدوات', 'وسائل', 'خدمات'];
-        const ownerAliases = ['owner', 'molchi', 'mol-chi', 'المالك', 'المطور'];
-        const generalAliases = ['general', '3am', 'عام', 'نظام', 'سيستم'];
-        const allAliases = ['all', 'allmenu', 'listall', 'كامل', 'كلشي'];
-
+        // --- PRIORITY 1: Sub-Menu/Category Aliases ---
         if (requested) {
-            // --- Global Redirect for .menu all ---
+            // Global Redirect for .menu all
             if (allAliases.includes(requested)) {
                 const allmenu = require('./allmenu');
                 return await allmenu(sock, chatId, msg, args, commands, userLang);
             }
 
-            // --- Islamic Sub-Menu ---
+            // Islamic Sub-Menu
             if (islamicAliases.includes(requested)) {
                 let islamicMenu = `🕌 *الموسوعة الإسلامية* 🕌\n\n` +
-                    `استخدم الأوامر التالية للحصول على معلومات دينية قيمّة:\n\n` +
                     `📖 .quran - تلاوة القرآن\n` +
                     `💬 .tafsir - تفسير الآيات\n` +
                     `🕋 .prayertimes - أوقات الصلاة\n` +
@@ -92,90 +77,56 @@ module.exports = async (sock, chatId, msg, args, commands, userLang) => {
                     `🌙 .qiyam - قيام الليل\n` +
                     `🔥 .danb - ذنب مهلك\n` +
                     `💡 .nasiha - نصيحة دينية\n` +
-                    `🧠 .tadabbur - تدبر قرآني\n` +
                     `✨ .sahaba - قصة صحابي\n` +
-                    `📚 .faida - فائدة علمية\n` +
-                    `⚖️ .hasanat - ميزان الحسنات\n` +
-                    `📆 .jumaa - تذكير جمعة\n` +
-                    `🕋 .hajj - مناسك الحج\n` +
-                    `🕊️ .sira - السيرة النبوية\n` +
-                    `⏳ .mawt - تذكير بالآخرة\n` +
-                    `🛡️ .shirk - احذر الشرك\n` +
-                    `💞 .hub - حب الله\n` +
-                    `🌴 .jannah - وصف الجنة\n` +
-                    `🔥 .nar - وصف النار\n` +
-                    `⚰️ .qabr - عذاب ونعيم القبر\n` +
-                    `🌋 .qiyama - أهوال القيامة\n` +
-                    `🌟 .mo3jiza - معجزات نبوية\n` +
-                    `📜 .tabiin - من قصص التابعين\n` +
-                    `🧕 .omahat - أمهات المؤمنين\n` +
-                    `👼 .malaika - عالم الملائكة\n` +
-                    `📖 .qisas - قصص الأنبياء والعبر\n` +
+                    ` .qisas - قصص الأنبياء والعبر\n` +
                     `📚 .hadith_long - أحاديث نبوية وقصص\n` +
-                    `✨ .sahaba_long - قصص الصحابة والتابعين\n` +
-                    `🧠 .deenquiz - مسابقة المعلومات الدينية\n\n` +
-                    `©️ *${t('common.botName', {}, userLang)} | 2025*`;
-
+                    `✨ .sahaba_long - قصص الصحابة والتابعين\n\n` +
+                    `🔙 اكتب *.menu* للرجوع للقائمة.`;
                 return await sendWithChannelButton(sock, chatId, islamicMenu, msg, {}, userLang);
             }
 
-            // --- Games Sub-Menu ---
+            // Games Sub-Menu
             if (gameAliases.includes(requested)) {
                 let gameMenu = `🎮 *MEGA GAME MENU* 🎮\n\n` +
-                    `🕹️ *ألعاب فردية (Solo):*\n` +
-                    `🎲 .guess - خمن الرقم\n` +
-                    `🤖 .rps - حجرة ورقة مقص\n` +
-                    `🕵️ .guesswho - شكون أنا؟\n` +
-                    `🃏 .blackjack - بلاك جاك (21)\n` +
-                    `🎰 .slots - ماكينة القمار\n` +
-                    `🧮 .math - تحدي الحساب\n` +
-                    `🧩 .scramble - رتب الكلمة\n` +
-                    `🧩 .riddle - حاجيتك ماجيتك\n` +
-                    `🤔 .truefalse - صح أم خطأ\n` +
-                    `🎭 .emojigame - خمن الإيموجي\n\n` +
-                    `🔥 *ألعاب جماعية (PvP):*\n` +
-                    `❌ .tictactoe - لعبة XO\n` +
-                    `❓ .quiz - مسابقة ثقافية\n` +
-                    `❤️ .love - مقياس الحب\n` +
-                    `📊 .rate - التقييم المضحك\n` +
-                    `🛳️ .ship - زوج جوج (Match)\n\n` +
-                    `🏆 *الاقتصاد والتنافس:*\n` +
-                    `👤 .profile - البروفايل الخاص\n` +
-                    `💰 .daily - الرصيد اليومي\n` +
-                    `🛍️ .shop - المتجر\n` +
-                    `🥇 .top - ترتيب الأوائل\n\n` +
-                    `🔙 اكتب *.menu* للرجوع للقائمة.`;
-
+                    `🕹️ *ألعاب فردية:*\n` +
+                    `🎲 .guess | 🤖 .rps |  .slots\n` +
+                    `🧮 .math | 🧩 .riddle | 🤔 .truefalse\n\n` +
+                    `🔥 *ألعاب جماعية:*\n` +
+                    `❌ .xo | ❓ .quiz | ❤️ .love\n\n` +
+                    ` اكتب *.menu* للرجوع للقائمة.`;
                 return await sendWithChannelButton(sock, chatId, gameMenu, msg, {}, userLang);
             }
 
-            // --- AI Sub-Menu ---
-            const aiAliases = ['ai', 'ذكاء', 'ذكاء_اصطناعي', 'robot', 'bot'];
+            // AI Sub-Menu
             if (aiAliases.includes(requested)) {
                 let aiMenu = `🤖 *مركز الذكاء الاصطناعي (Imperial AI)* 🤖\n\n` +
-                    `✨ *النماذج الذكية (LLMs):*\n` +
-                    `🤖 .gpt - هضر مع الساط GPT\n` +
-                    `♊ .gemini - جوجل Gemini\n` +
-                    `🧠 .deepseek - موديل DeepSeek الجديد\n\n` +
+                    `✨ *النماذج الذكية:*\n` +
+                    `🤖 .gpt | ♊ .gemini | 🧠 .deepseek\n\n` +
                     `🎨 *توليد ومعالجة الصور:*\n` +
-                    `🖼️ .imagine - رسم بالذكاء الاصطناعي\n` +
-                    `🌟 .aiart - فن واعر بالذكاء\n` +
-                    `✨ .remini - وضح ونقي التصويرة\n` +
-                    `🖌️ .colorize - لون التصاور القدام\n` +
-                    `🎭 .faceswap - بدل الوجه ف التصويرة\n` +
-                    `🪄 .edit - ميكساج وتعديل الصور\n\n` +
-                    `🎧 *معالجة الصوت:*\n` +
-                    `🎙️ .vocalremover - حيد الموسيقى وخلي الصوت\n\n` +
+                    `🖼️ .imagine | 🌟 .aiart | ✨ .remini\n` +
+                    `🖌️ .colorize | � .faceswap | 🪄 .edit\n\n` +
                     `🔙 اكتب *.menu* للرجوع للقائمة.`;
-
                 return await sendWithChannelButton(sock, chatId, aiMenu, msg, {}, userLang);
             }
         }
 
+        // --- PRIORITY 2: Individual Command Help ---
+        if (requested && commands.has(requested)) {
+            const desc = t(`command_desc.${requested}`, {}, userLang);
+            if (!desc.startsWith('command_desc.')) {
+                return await sendWithChannelButton(sock, chatId,
+                    `💡 *${t('menu.title', {}, userLang)}:* ${prefix}${requested}\n\n` +
+                    `📝 *الشرح:* ${desc}\n\n` +
+                    `� *المطور:* ${t('common.botOwner', {}, userLang)}`,
+                    msg, {}, userLang
+                );
+            }
+        }
+
+        // --- PRIORITY 3: General Category Display ---
         let menuText = "";
         let isGeneralHelp = false;
 
-        // --- Selective Rendering ---
         if (!requested) {
             isGeneralHelp = true;
             menuText = header + `🔱 *مرحباً بك في إمبراطورية حمزة اعمرني* 🔱\n` +
@@ -191,8 +142,6 @@ module.exports = async (sock, chatId, msg, args, commands, userLang) => {
 
             for (const key of Object.keys(catMap)) {
                 if (sectionDividers[key]) menuText += `\n${sectionDividers[key]}\n`;
-                const catName = t(`menu.categories.${key}`, {}, userLang);
-
                 let icon = '📂';
                 let cmdAlias = key;
                 if (key === 'new') icon = '🔥';
@@ -210,15 +159,14 @@ module.exports = async (sock, chatId, msg, args, commands, userLang) => {
             menuText += `\n🌟 *${prefix}menu all* - إمبراطورية الأوامر\n`;
             menuText += `\n💡 *مثال:* لإظهار أوامر الضحك، اكتب *.menu dahik*`;
         } else {
+            // General Category fallback (if not caught by specific sub-menus above)
             let selectedKey = null;
-            if (islamicAliases.includes(requested)) selectedKey = 'religion';
-            else if (gameAliases.includes(requested)) selectedKey = 'games';
+            if (catMap[requested]) selectedKey = requested;
             else if (funAliases.includes(requested)) selectedKey = 'fun';
             else if (downloadAliases.includes(requested)) selectedKey = 'download';
             else if (toolsAliases.includes(requested)) selectedKey = 'tools';
             else if (ownerAliases.includes(requested)) selectedKey = 'owner';
             else if (generalAliases.includes(requested)) selectedKey = 'general';
-            else if (catMap[requested]) selectedKey = requested;
 
             if (selectedKey) {
                 const catName = t(`menu.categories.${selectedKey}`, {}, userLang);
@@ -236,7 +184,7 @@ module.exports = async (sock, chatId, msg, args, commands, userLang) => {
             }
         }
 
-        // 4. Send Visual Header (Photo) + Imperial Text
+        // --- 4. Final Delivery ---
         if (isGeneralHelp) {
             const fs = require('fs');
             let imageHandle = { url: settings.botThumbnail };
