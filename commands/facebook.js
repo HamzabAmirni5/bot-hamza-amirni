@@ -1,0 +1,168 @@
+const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
+const { sendWithChannelButton } = require('../lib/channelButton');
+const { getCommandDescription } = require('../lib/commandDescriptions');
+const { t } = require('../lib/language');
+const settings = require('../settings');
+
+async function facebookCommand(sock, chatId, msg, args, commands, userLang) {
+    try {
+        const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || "";
+        const url = args && args[0] ? args[0] : text.split(' ').slice(1).join(' ').trim();
+
+        if (!url) {
+            return await sendWithChannelButton(sock, chatId, t('download.fb_usage', {}, userLang), msg);
+        }
+
+        // Validate Facebook URL
+        if (!url.match(/(facebook\.com|fb\.watch|fb\.com)/i)) {
+            return await sendWithChannelButton(sock, chatId, t('download.fb_no_url', {}, userLang), msg);
+        }
+
+        // Send loading status and reaction
+        await sock.sendMessage(chatId, { text: t('download.fb_downloading', {}, userLang) }, { quoted: msg });
+        await sock.sendMessage(chatId, {
+            react: { text: '🔄', key: msg.key }
+        });
+
+        // 1. Try Hanggts API (User's choice)
+        try {
+            const apiUrl = `https://api.hanggts.xyz/download/facebook?url=${encodeURIComponent(url)}`;
+            const response = await axios.get(apiUrl, { timeout: 15000 });
+
+            let fbvid = null;
+            const data = response.data;
+
+            if (data && (data.status === true || data.result)) {
+                // Try to extract video URL
+                if (data.result?.media?.video_hd) fbvid = data.result.media.video_hd;
+                else if (data.result?.media?.video_sd) fbvid = data.result.media.video_sd;
+                else if (data.result?.url) fbvid = data.result.url;
+                else if (data.result?.download) fbvid = data.result.download;
+                else if (typeof data.result === 'string') fbvid = data.result;
+            }
+
+            if (fbvid) {
+                console.log('✅ Found video using Hanggts API');
+                await sendVideo(sock, chatId, fbvid, "Hanggts API", msg, userLang);
+                return;
+            }
+        } catch (e) {
+            console.log('⚠️ Hanggts API failed, trying fallback...');
+        }
+
+        // 2. Fallback: Ryzendesu API
+        try {
+            const apiUrl = `https://api.ryzendesu.vip/api/downloader/fb?url=${encodeURIComponent(url)}`;
+            const response = await axios.get(apiUrl, { timeout: 15000 });
+
+            const data = response.data;
+            if (data && data.url && Array.isArray(data.url)) {
+                // Find HD or first available
+                const hd = data.url.find(v => v.quality === 'hd' || v.quality === '720p');
+                const sd = data.url.find(v => v.quality === 'sd');
+                const fbvid = hd?.url || sd?.url || data.url[0]?.url;
+
+                if (fbvid) {
+                    console.log('✅ Found video using Ryzendesu API');
+                    await sendVideo(sock, chatId, fbvid, "Ryzendesu API", msg, userLang);
+                    return;
+                }
+            } else if (data && data.data && Array.isArray(data.data)) {
+                const fbvid = data.data[0]?.url;
+                if (fbvid) {
+                    console.log('✅ Found video using Ryzendesu API (Format 2)');
+                    await sendVideo(sock, chatId, fbvid, "Ryzendesu API", msg, userLang);
+                    return;
+                }
+            }
+        } catch (e) {
+            console.log('⚠️ Ryzendesu API failed, trying fallback...');
+        }
+
+        // 3. Fallback: GuruAPI
+        try {
+            const apiUrl = `https://api.guruapi.tech/fbvideo?url=${encodeURIComponent(url)}`;
+            const response = await axios.get(apiUrl, { timeout: 15000 });
+
+            const data = response.data;
+            if (data && data.result) {
+                const fbvid = data.result.hd || data.result.sd;
+                if (fbvid) {
+                    console.log('✅ Found video using GuruAPI');
+                    await sendVideo(sock, chatId, fbvid, "GuruAPI", msg, userLang);
+                    return;
+                }
+            }
+        } catch (e) {
+            console.log('⚠️ GuruAPI failed...');
+        }
+
+        throw new Error('All APIs failed to fetch video');
+
+    } catch (error) {
+        console.error('Error in Facebook command:', error);
+        await sendWithChannelButton(sock, chatId, t('download.fb_error', {}, userLang) + `\n${error.message}`, msg);
+    }
+}
+
+// Helper to send video
+async function sendVideo(sock, chatId, videoUrl, apiName, quoted, userLang) {
+    try {
+        await sock.sendMessage(chatId, {
+            video: { url: videoUrl },
+            caption: t('download.fb_success', { source: apiName, botName: settings.botName }, userLang),
+            mimetype: 'video/mp4'
+        }, { quoted: quoted });
+    } catch (e) {
+        console.error('Error sending video URL, trying buffer:', e.message);
+        try {
+            // Fallback: download to temp file with stream
+            const tempDir = path.join(__dirname, '../temp');
+            if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
+            const tempFile = path.join(tempDir, `fb_${Date.now()}.mp4`);
+
+            try {
+                const writer = fs.createWriteStream(tempFile);
+                const response = await axios({
+                    url: videoUrl,
+                    method: 'GET',
+                    responseType: 'stream',
+                    headers: { 'User-Agent': 'Mozilla/5.0' }
+                });
+
+                response.data.pipe(writer);
+
+                await new Promise((resolve, reject) => {
+                    writer.on('finish', resolve);
+                    writer.on('error', reject);
+                });
+
+                // Check size
+                const stats = fs.statSync(tempFile);
+                if (stats.size > 99 * 1024 * 1024) {
+                    throw new Error("File too large > 99MB");
+                }
+
+                await sock.sendMessage(chatId, {
+                    video: { url: tempFile },
+                    caption: t('download.fb_success', { source: apiName, botName: settings.botName }, userLang),
+                    mimetype: 'video/mp4'
+                }, { quoted: quoted });
+
+            } finally {
+                if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile);
+            }
+        } catch (bufferError) {
+            console.error('Buffer send failed:', bufferError);
+            throw new Error('Failed to send video');
+        }
+    }
+}
+
+facebookCommand.command = ['fb', 'facebook'];
+facebookCommand.tags = ['downloader'];
+facebookCommand.desc = 'تحميل فيديوهات فيسبوك';
+
+module.exports = facebookCommand;
