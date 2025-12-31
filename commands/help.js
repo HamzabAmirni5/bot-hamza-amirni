@@ -78,7 +78,7 @@ module.exports = async (sock, chatId, msg, args, commands, userLang) => {
                     `🔥 .danb - ذنب مهلك\n` +
                     `💡 .nasiha - نصيحة دينية\n` +
                     `✨ .sahaba - قصة صحابي\n` +
-                    ` .qisas - قصص الأنبياء والعبر\n` +
+                    `📖 .qisas - قصص الأنبياء والعبر\n` +
                     `📚 .hadith_long - أحاديث نبوية وقصص\n` +
                     `✨ .sahaba_long - قصص الصحابة والتابعين\n\n` +
                     `🔙 اكتب *.menu* للرجوع للقائمة.`;
@@ -89,11 +89,11 @@ module.exports = async (sock, chatId, msg, args, commands, userLang) => {
             if (gameAliases.includes(requested)) {
                 let gameMenu = `🎮 *MEGA GAME MENU* 🎮\n\n` +
                     `🕹️ *ألعاب فردية:*\n` +
-                    `🎲 .guess | 🤖 .rps |  .slots\n` +
+                    `🎲 .guess | 🤖 .rps | 🎰 .slots\n` +
                     `🧮 .math | 🧩 .riddle | 🤔 .truefalse\n\n` +
                     `🔥 *ألعاب جماعية:*\n` +
                     `❌ .xo | ❓ .quiz | ❤️ .love\n\n` +
-                    ` اكتب *.menu* للرجوع للقائمة.`;
+                    `🔙 اكتب *.menu* للرجوع للقائمة.`;
                 return await sendWithChannelButton(sock, chatId, gameMenu, msg, {}, userLang);
             }
 
