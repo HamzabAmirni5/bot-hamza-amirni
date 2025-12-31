@@ -115,6 +115,23 @@ module.exports = async (sock, chatId, msg, args, commands, userLang) => {
                     `🔙 اكتب *.menu* للرجوع للقائمة.`;
                 return await sendWithChannelButton(sock, chatId, aiMenu, msg, {}, userLang);
             }
+
+            // Special Custom Help: MiraMuse
+            if (requested === 'miramuse') {
+                const miraHelp = `🖼️ *مولد الصور MiraMuse AI* 🖼️\n\n` +
+                    `أنشئ صوراً احترافية عالية الجودة باستخدام نماذج وأحجام مختلفة.\n\n` +
+                    `🔧 *كيفية الاستخدام:*\n` +
+                    `${prefix}miramuse [الوصف] | [الموديل] | [المقاس]\n\n` +
+                    `📝 *مثال:*\n` +
+                    `${prefix}miramuse beautiful cyberpunk girl | anime | 3:4\n\n` +
+                    `📌 *الموديلات المتاحة:*\n` +
+                    `flux, tamarin, superAnime, visiCanvas, realistic, oldRealistic, anime, 3danime\n\n` +
+                    `📌 *المقاسات المتاحة:*\n` +
+                    `1:2, 9:16, 3:4, 1:1, 4:3, 16:9, 2:1\n\n` +
+                    `⚔️ *حمزة اعمرني*`;
+
+                return await sendWithChannelButton(sock, chatId, miraHelp, msg, {}, userLang);
+            }
         }
 
         // --- PRIORITY 2: Individual Command Help ---
