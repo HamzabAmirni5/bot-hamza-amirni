@@ -100,11 +100,18 @@ module.exports = async (sock, chatId, msg, args, commands, userLang) => {
             // AI Sub-Menu
             if (aiAliases.includes(requested)) {
                 let aiMenu = `🤖 *مركز الذكاء الاصطناعي (Imperial AI)* 🤖\n\n` +
-                    `✨ *النماذج الذكية:*\n` +
-                    `🤖 .gpt | ♊ .gemini | 🧠 .deepseek\n\n` +
-                    `🎨 *توليد ومعالجة الصور:*\n` +
-                    `🖼️ .imagine | 🌟 .aiart | ✨ .remini\n` +
-                    `🖌️ .colorize | � .faceswap | 🪄 .edit\n\n` +
+                    `🤖 .gpt : سول GPT\n` +
+                    `♊ .gemini : سول Gemini\n` +
+                    `🧠 .deepseek : موديل ذكي جديد\n` +
+                    `🖼️ .imagine : تخيل معايا (رسم)\n` +
+                    `🌟 .aiart : فن واعر بالذكاء\n` +
+                    `◽ .miramuse : إبداع موسيقي\n` +
+                    `🎨 .ghibli-art : ستايل جيبلي\n` +
+                    `◽ .faceswap : بدل الوجه ف التصويرة\n` +
+                    `◽ .ai-enhance : زيين ونقي التصويرة\n` +
+                    `◽ .colorize : لون التصاور القدام\n` +
+                    `✨ .remini : وضح التصويرة الضبابية\n` +
+                    `🎙️ .vocalremover : حيد الموسيقى وخلي الصوت\n\n` +
                     `🔙 اكتب *.menu* للرجوع للقائمة.`;
                 return await sendWithChannelButton(sock, chatId, aiMenu, msg, {}, userLang);
             }
