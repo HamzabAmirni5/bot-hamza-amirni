@@ -127,7 +127,7 @@ async function videoCommand(sock, chatId, msg, args, commands, userLang) {
             await sock.sendMessage(chatId, { react: { text: '✅', key: msg.key } });
             return;
         } catch (directSendErr) {
-            console.log('[video.js] Direct send from URL failed:', directSendErr.message);
+            console.log('[video.js] Direct send from URL failed, trying local download:', directSendErr.message);
         }
 
         // If direct send fails, fallback to downloading
@@ -150,10 +150,10 @@ async function videoCommand(sock, chatId, msg, args, commands, userLang) {
         const tempFile = path.join(tempDir, `${Date.now()}.mp4`);
 
         try {
-            // Check content-length header first
-            const headRes = await axios.head(videoDownloadUrl);
-            const contentLength = headRes.headers['content-length'];
-            if (contentLength && parseInt(contentLength) > 250 * 1024 * 1024) { // Increased to 250MB
+            // Check size before downloading (Stability)
+            const headRes = await axios.head(videoDownloadUrl, { timeout: 15000 }).catch(() => null);
+            const contentLength = headRes ? headRes.headers['content-length'] : null;
+            if (contentLength && parseInt(contentLength) > 250 * 1024 * 1024) {
                 await sock.sendMessage(chatId, { text: t('download.yt_large', {}, userLang) }, { quoted: msg });
                 return;
             }

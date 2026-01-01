@@ -382,7 +382,9 @@ async function startBot() {
                         `• *Prefix:* ${settings.prefix}\n\n` +
                         ` *Ready to serve!*`;
 
-                    await sock.sendMessage(botJid, { text: msgText });
+                    if (sock.user && !sock.isClosed) {
+                        await sock.sendMessage(botJid, { text: msgText });
+                    }
 
                     // --- SEND SESSION ID TO OWNER (Only if not already set in ENV) ---
                     if (!process.env.SESSION_ID) {
