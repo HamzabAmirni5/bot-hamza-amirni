@@ -263,6 +263,12 @@ async function syncSession() {
         console.log(chalk.cyan('🔄 SESSION_ID detected, syncing session...'));
         if (!fs.existsSync(sessionDir)) fs.mkdirSync(sessionDir, { recursive: true });
 
+        // Check if creds.json already exists to prevent overwriting with old session data
+        if (fs.existsSync(path.join(sessionDir, 'creds.json'))) {
+            console.log(chalk.yellow('⚠️ creds.json already exists. Skipping session sync to prevent key rollback.'));
+            return;
+        }
+
         // Format: Session~<base64_encoded_creds>
         const encodedData = sessionID.split('Session~')[1] || sessionID;
         const decodedData = Buffer.from(encodedData, 'base64').toString('utf-8');
@@ -427,7 +433,12 @@ async function startBot() {
                         console.log(chalk.cyan('ℹ️ SESSION_ID is already configured. Skipping auto-send to prevent loop.'));
                     }
                 } catch (err) {
-                    console.error('Failed to send self-connected message:', err);
+                    // Suppress Connection Closed error as it's expected during fast reconnections
+                    if (String(err).includes('Connection Closed') || String(err).includes('Precondition Required')) {
+                        console.warn('⚠️ Could not send self-message (Connection Closed).');
+                    } else {
+                        console.error('Failed to send self-connected message:', err);
+                    }
                 }
             }, 10000);
 
