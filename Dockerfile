@@ -1,11 +1,15 @@
 FROM node:18-bullseye
 
-# Install system dependencies for canvas, sharp, and ffmpeg
+# Install complete set of build tools and system dependencies
 RUN apt-get update && apt-get install -y \
+    build-essential \
     python3 \
     make \
     g++ \
     pkg-config \
+    autoconf \
+    automake \
+    libtool \
     libcairo2-dev \
     libpango1.0-dev \
     libjpeg-dev \
@@ -24,14 +28,14 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies with flags to handle potential conflicts and save RAM
+RUN npm install --legacy-peer-deps --no-audit --no-fund
 
 # Copy the rest of the application
 COPY . .
 
-# Expose the port (from index.js)
+# Expose the port (Koyeb usually uses 8000)
 EXPOSE 8000
 
 # Start the application
-CMD ["npm", "start"]
+CMD ["node", "index.js"]
