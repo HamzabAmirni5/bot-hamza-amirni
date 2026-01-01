@@ -113,7 +113,7 @@ console.info = function (...args) {
 };
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 8000;
 
 // Ensure data directory exists
 const dataDirPath = path.join(__dirname, 'data');
