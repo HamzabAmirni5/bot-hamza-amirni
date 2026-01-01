@@ -231,8 +231,24 @@ const sessionDir = './session';
 const msgRetryCounterCache = new NodeCache();
 
 // Setup Express for Keep-Alive
-app.get('/', (req, res) => res.send('Bot is running'));
-app.listen(port, () => console.log(`Port ${port} is open`));
+app.get('/', (req, res) => res.send('Bot is running successfully! 🚀'));
+app.listen(port, () => {
+    console.log(`Port ${port} is open`);
+
+    // Keep-Alive Self-Ping (to prevent sleeping on Koyeb Eco)
+    const publicDomain = process.env.KOYEB_PUBLIC_DOMAIN;
+    if (publicDomain) {
+        setInterval(async () => {
+            try {
+                const axios = require('axios');
+                await axios.get(`https://${publicDomain}`);
+                console.log('📡 Keep-Alive ping sent to self');
+            } catch (e) {
+                console.log('📡 Keep-Alive ping failed (expected if site is just waking up)');
+            }
+        }, 10 * 60 * 1000); // Every 10 minutes
+    }
+});
 
 // Readline Interface for interactive input
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
