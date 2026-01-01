@@ -139,8 +139,17 @@ function startPrayerScheduler(sock) {
             if (!user.enabled) continue;
 
             const city = user.city || 'Casablanca';
+            // Default to Morocco/Casablanca if not specified, matching user request
             const data = await getPrayerTimes(city);
             if (!data) continue;
+
+            // Import getRandomDua dynamically to avoid circular dependency issues at startup
+            let randomDua = "اللهم تقبل منا ومنكم صالح الأعمال";
+            try {
+                const { getRandomDua } = require('./ad3iya');
+                const duaObj = getRandomDua();
+                randomDua = duaObj.dua;
+            } catch (e) { }
 
             const prayers = {
                 'الفجر': data.timings.Fajr,
@@ -176,8 +185,9 @@ function startPrayerScheduler(sock) {
                         `📊 *تقدمك اليوم:*\n` +
                         `   ${progress.join('──')}\n` +
                         `   🕰️ *التالية:* ${next[0]} (${next[1]})\n\n` +
-                        `🌟 *همسة:* ${randomTip}\n\n` +
-                        `⚠️ بركة يومك تبدأ من صلاتك في وقتها.\n` +
+                        `🌟 *دعاء مستجاب:* ${randomDua}\n\n` +
+                        `⚠️ *تذكير:* ${randomTip}\n` +
+                        `🤲 *الله يتقبل! لا تنسونا من صالح دعائكم.*\n` +
                         `━━━━━━━━━━━━━━━━━━━━\n` +
                         `⚔️ ${settings.botName}`;
 

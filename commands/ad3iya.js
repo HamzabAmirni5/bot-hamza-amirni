@@ -192,3 +192,4 @@ function startScheduler(sock) {
 module.exports = ad3iyaCommand;
 module.exports.startScheduler = startScheduler;
 module.exports.autoSubscribe = autoSubscribe;
+module.exports.getRandomDua = getRandomDua;
