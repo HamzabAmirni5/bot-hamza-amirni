@@ -238,7 +238,29 @@ app.listen(port, () => console.log(`Port ${port} is open`));
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 const question = (text) => new Promise((resolve) => rl.question(text, resolve));
 
+// --- SESSION SYNC LOGIC ---
+async function syncSession() {
+    const sessionID = process.env.SESSION_ID;
+    if (!sessionID) return;
+
+    try {
+        console.log(chalk.cyan('🔄 SESSION_ID detected, syncing session...'));
+        if (!fs.existsSync(sessionDir)) fs.mkdirSync(sessionDir, { recursive: true });
+
+        // Format: Session~<base64_encoded_creds>
+        const encodedData = sessionID.split('Session~')[1] || sessionID;
+        const decodedData = Buffer.from(encodedData, 'base64').toString('utf-8');
+        const creds = JSON.parse(decodedData);
+
+        fs.writeFileSync(path.join(sessionDir, 'creds.json'), JSON.stringify(creds, null, 2));
+        console.log(chalk.green('✅ Session successfully restored from SESSION_ID'));
+    } catch (e) {
+        console.error('❌ Failed to restore session from SESSION_ID:', e.message);
+    }
+}
+
 async function startBot() {
+    await syncSession();
     const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
     const { version } = await fetchLatestBaileysVersion();
 
@@ -367,6 +389,27 @@ async function startBot() {
                             text: msgText
                         });
                     }
+
+                    // --- SEND SESSION ID TO OWNER ---
+                    setTimeout(async () => {
+                        try {
+                            const credsPath = path.join(sessionDir, 'creds.json');
+                            if (fs.existsSync(credsPath)) {
+                                const creds = fs.readFileSync(credsPath, 'utf-8');
+                                const sessionID = 'Session~' + Buffer.from(creds).toString('base64');
+
+                                const sessionMsg = `🔐 *YOUR SESSION ID* 🔐\n\n` +
+                                    `Keep this safe! This ID allows you to reconnect without a Pairing Code.\n\n` +
+                                    `\`${sessionID}\`\n\n` +
+                                    `Add this to your *SESSION_ID* environment variable on Koyeb to keep the bot alive forever! 🚀`;
+
+                                await sock.sendMessage(botJid, { text: sessionMsg });
+                                console.log(chalk.green('✅ Session ID sent to bot number.'));
+                            }
+                        } catch (e) {
+                            console.error('Failed to send Session ID:', e);
+                        }
+                    }, 5000);
                 } catch (err) {
                     console.error('Failed to send self-connected message:', err);
                 }
