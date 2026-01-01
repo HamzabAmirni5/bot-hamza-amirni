@@ -1,4 +1,4 @@
-FROM node:18-bullseye
+FROM node:20-bullseye
 
 # Install complete set of build tools and system dependencies
 RUN apt-get update && apt-get install -y \
