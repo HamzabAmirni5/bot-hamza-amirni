@@ -63,6 +63,20 @@ module.exports = async (sock, chatId, msg, args, commands, userLang) => {
             }
         }
 
+        // Fallback 3: Deliriuss API
+        if (!audioUrl) {
+            try {
+                const deliriussUrl = `https://deliriussapi-oficial.vercel.app/download/ytmp3?url=${encodeURIComponent(videoUrl)}`;
+                const dResponse = await axios.get(deliriussUrl, { timeout: 30000 });
+                if (dResponse.data && dResponse.data.status) {
+                    audioUrl = dResponse.data.data.download.url;
+                    finalTitle = dResponse.data.data.title || finalTitle;
+                }
+            } catch (de) {
+                console.log('[play.js] Deliriuss fallback failed:', de.message);
+            }
+        }
+
         if (!audioUrl) {
             return await sock.sendMessage(chatId, {
                 text: t('play.error_api', {}, userLang)

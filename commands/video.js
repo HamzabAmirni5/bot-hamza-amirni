@@ -91,6 +91,20 @@ async function videoCommand(sock, chatId, msg, args, commands, userLang) {
             }
         }
 
+        // Fallback 3: Deliriuss API
+        if (!videoDownloadUrl) {
+            try {
+                const deliriussUrl = `https://deliriussapi-oficial.vercel.app/download/ytmp4?url=${encodeURIComponent(videoUrl)}`;
+                const dResponse = await axios.get(deliriussUrl, { timeout: 30000 });
+                if (dResponse.data && dResponse.data.status) {
+                    videoDownloadUrl = dResponse.data.data.download.url;
+                    title = dResponse.data.data.title || title;
+                }
+            } catch (de) {
+                console.log('[video.js] Deliriuss fallback failed:', de.message);
+            }
+        }
+
         if (!videoDownloadUrl) {
             await sock.sendMessage(chatId, { text: t('download.yt_error', {}, userLang) }, { quoted: msg });
             await sock.sendMessage(chatId, { react: { text: '❌', key: msg.key } });

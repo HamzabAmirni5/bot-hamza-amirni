@@ -76,6 +76,20 @@ async function songCommand(sock, chatId, message, args, commands, userLang) {
             }
         }
 
+        // Fallback 3: Deliriuss API
+        if (!audioUrl) {
+            try {
+                const deliriussUrl = `https://deliriussapi-oficial.vercel.app/download/ytmp3?url=${encodeURIComponent(videoUrl)}`;
+                const dResponse = await axios.get(deliriussUrl, { timeout: 30000 });
+                if (dResponse.data && dResponse.data.status) {
+                    audioUrl = dResponse.data.data.download.url;
+                    title = dResponse.data.data.title || title;
+                }
+            } catch (de) {
+                console.log('[song.js] Deliriuss fallback failed:', de.message);
+            }
+        }
+
         if (!audioUrl) {
             await sock.sendMessage(chatId, {
                 text: t('download.yt_error', {}, userLang)
