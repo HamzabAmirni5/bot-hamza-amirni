@@ -2,6 +2,8 @@ const axios = require("axios");
 const { sendWithChannelButton } = require('../lib/channelButton');
 const settings = require('../settings');
 const { uploadImage } = require('../lib/uploadImage');
+const { translateToEn } = require('../lib/translate');
+const { t } = require('../lib/language');
 
 /**
  * AI Image Modifier (img2img)
@@ -61,12 +63,7 @@ async function editCommand(sock, chatId, msg, args, commands, userLang) {
     if (isImage) {
         prompt = args.join(" ").trim();
         if (!prompt) {
-            const errPpt = userLang === 'ma'
-                ? "⚠️ *خصك تكتب شنو بغيتي تبدل فالتصويرة!*\n📝 مثال: .edit اجعل السماء حمراء"
-                : userLang === 'ar'
-                    ? "⚠️ *يرجى كتابة وصف التعديل!*\n📝 مثال: .edit اجعل السماء حمراء"
-                    : "⚠️ *Please specify what to edit!*\n📝 Example: .edit make the sky red";
-            return await sock.sendMessage(chatId, { text: errPpt }, { quoted: msg });
+            return await sock.sendMessage(chatId, { text: t('ai.provide_prompt', {}, userLang) }, { quoted: msg });
         }
 
         await sock.sendMessage(chatId, { react: { text: "⏳", key: msg.key } });
@@ -76,13 +73,7 @@ async function editCommand(sock, chatId, msg, args, commands, userLang) {
             const buffer = await downloadMediaMessage(quoted, 'buffer', {}, { logger: undefined, reuploadRequest: sock.updateMediaMessage });
             if (!buffer) throw new Error("تعذر تحميل الصورة");
 
-            const processingMsg = userLang === 'ma'
-                ? "⏳ *جاري رفع الصورة ومعالجتها... صبر عشيري*"
-                : userLang === 'ar'
-                    ? "⏳ *جاري رفع الصورة ومعالجتها...*"
-                    : "⏳ *Uploading and processing image...*";
-
-            await sendWithChannelButton(sock, chatId, processingMsg, msg, {}, userLang);
+            await sendWithChannelButton(sock, chatId, t('ai.wait', {}, userLang), msg, {}, userLang);
             url = await uploadImage(buffer);
         } catch (e) {
             return await sock.sendMessage(chatId, { text: `❌ فشل رفع الصورة: ${e.message}` }, { quoted: msg });
@@ -100,11 +91,7 @@ async function editCommand(sock, chatId, msg, args, commands, userLang) {
         if (!isImage) await sock.sendMessage(chatId, { react: { text: "⏳", key: msg.key } });
 
         // Translate prompt to English
-        let translatedPrompt = prompt;
-        try {
-            const trRes = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(prompt)}`);
-            if (trRes.data?.[0]?.[0]?.[0]) translatedPrompt = trRes.data[0][0][0];
-        } catch (e) { }
+        const translatedPrompt = await translateToEn(prompt);
 
         const resultBuffer = await img2img(url, translatedPrompt);
 
@@ -124,11 +111,7 @@ async function editCommand(sock, chatId, msg, args, commands, userLang) {
     } catch (error) {
         console.error('edit command error:', error);
         await sock.sendMessage(chatId, { react: { text: "❌", key: msg.key } });
-        const errMsg = userLang === 'ma'
-            ? "❌ *وقع خطأ أثناء معالجة الصورة.*"
-            : "❌ *Error processing image.*";
-
-        await sock.sendMessage(chatId, { text: errMsg }, { quoted: msg });
+        await sock.sendMessage(chatId, { text: t('ai.error', {}, userLang) }, { quoted: msg });
     }
 }
 

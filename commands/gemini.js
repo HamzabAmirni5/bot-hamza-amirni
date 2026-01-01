@@ -1,19 +1,12 @@
-const axios = require("axios");
-const { sendWithChannelButton } = require('../lib/channelButton');
 const settings = require('../settings');
+const { t } = require('../lib/language');
 
-async function geminiCommand(sock, chatId, message, args) {
+async function geminiCommand(sock, chatId, message, args, commands, userLang) {
     try {
         const query = Array.isArray(args) ? args.join(' ') : args;
 
         if (!query || query.trim().length === 0) {
-            const helpMsg = userLang === 'ma'
-                ? `🤖 *Google Gemini AI*\n\n📝 *الاستخدام:*\n${settings.prefix}gemini [سؤالك]\n\n💡 *مثال:*\n${settings.prefix}gemini شنو هي أفضل طريقة لتعلم البرمجة؟\n\n⚔️ ${settings.botName}`
-                : userLang === 'ar'
-                    ? `🤖 *Google Gemini AI*\n\n📝 *الاستخدام:*\n${settings.prefix}gemini [سؤالك]\n\n💡 *مثال:*\n${settings.prefix}gemini ما هي أفضل طريقة لتعلم البرمجة؟\n\n⚔️ ${settings.botName}`
-                    : `🤖 *Google Gemini AI*\n\n📝 *Usage:*\n${settings.prefix}gemini [question]\n\n💡 *Example:*\n${settings.prefix}gemini Explain quantum computing\n\n⚔️ ${settings.botName}`;
-
-            return await sendWithChannelButton(sock, chatId, helpMsg, message);
+            return await sock.sendMessage(chatId, { text: t('gemini.help', { prefix: settings.prefix, botName: settings.botName }, userLang) }, { quoted: message });
         }
 
         // React with 🤖 while processing
@@ -22,12 +15,7 @@ async function geminiCommand(sock, chatId, message, args) {
         });
 
         // Send thinking message
-        const thinkMsg = userLang === 'ma'
-            ? "🤖 *Gemini كيفكر، بلاتي...*"
-            : userLang === 'ar'
-                ? "🤖 *Gemini يفكر، يرجى الانتظار...*"
-                : "🤖 *Gemini is thinking...*";
-        await sock.sendMessage(chatId, { text: thinkMsg }, { quoted: message });
+        await sock.sendMessage(chatId, { text: t('gemini.loading', {}, userLang) }, { quoted: message });
 
         const apiUrl = `https://all-in-1-ais.officialhectormanuel.workers.dev/?query=${encodeURIComponent(query)}&model=deepseek`;
 
@@ -41,12 +29,7 @@ async function geminiCommand(sock, chatId, message, args) {
         }
     } catch (error) {
         console.error("Gemini API Error:", error.message);
-        const errMsg = userLang === 'ma'
-            ? "❌ *تعكسات الأمور. عاود جرب من بعد.*"
-            : userLang === 'ar'
-                ? "❌ *فشل الاتصال بـ Gemini. حاول لاحقاً.*"
-                : "❌ *Gemini failed. Try again later.*";
-        await sock.sendMessage(chatId, { text: errMsg }, { quoted: message });
+        await sock.sendMessage(chatId, { text: t('gemini.error', {}, userLang) }, { quoted: message });
     }
 }
 

@@ -1,8 +1,9 @@
 const MiraMuseAI = require('../lib/miraMuseAI');
 const { sendWithChannelButton } = require('../lib/channelButton');
-const settings = require('../settings');
+const { translateToEn } = require('../lib/translate');
+const { t } = require('../lib/language');
 
-async function miramuseCommand(sock, chatId, msg, args) {
+async function miramuseCommand(sock, chatId, msg, args, commands, userLang) {
     const text = args.join(' ').trim();
 
     if (!text) {
@@ -31,11 +32,12 @@ flux, tamarin, superAnime, visiCanvas, realistic, oldRealistic, anime, 3danime
 
     try {
         await sock.sendMessage(chatId, { react: { text: "⏳", key: msg.key } });
-        await sendWithChannelButton(sock, chatId, '⏳ *جاري إنشاء صورتك بواسطة MiraMuse AI...* يرجى الانتظار.', msg);
+        await sendWithChannelButton(sock, chatId, t('ai.wait', {}, userLang), msg);
 
         const api = new MiraMuseAI();
+        const enPrompt = await translateToEn(prompt);
         const result = await api.generate({
-            prompt,
+            prompt: enPrompt,
             model,
             size
         });
@@ -55,7 +57,7 @@ flux, tamarin, superAnime, visiCanvas, realistic, oldRealistic, anime, 3danime
     } catch (err) {
         console.error('Error in MiraMuse AI:', err);
         await sock.sendMessage(chatId, { react: { text: "❌", key: msg.key } });
-        await sendWithChannelButton(sock, chatId, `❌ فشل إنشاء الصورة.\n⚠️ السبب: ${err.message || 'خطأ غير معروف'}`, msg);
+        await sendWithChannelButton(sock, chatId, t('ai.error', {}, userLang) + `\n⚠️ السبب: ${err.message || 'خطأ غير معروف'}`, msg);
     }
 }
 

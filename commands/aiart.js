@@ -1,28 +1,22 @@
 const { default: makeWASocket, BufferJSON, WA_DEFAULT_EPHEMERAL, generateWAMessageFromContent, downloadContentFromMessage, downloadHistory, proto, getContentType, generateWAMessageContent, prepareWAMessageMedia } = require('@whiskeysockets/baileys');
 const axios = require('axios');
 const fs = require('fs');
+const { translateToEn } = require('../lib/translate');
+const { t } = require('../lib/language');
 
 module.exports = async (sock, chatId, msg, args, commands, userLang) => {
     try {
         const text = Array.isArray(args) ? args.join(' ') : args;
-        if (!text || text.trim().length === 0) return sock.sendMessage(chatId, { text: "🎨 Please provide a prompt.\nExample: *.aiart* A futuristic city in Morocco" }, { quoted: msg });
+        if (!text || text.trim().length === 0) return sock.sendMessage(chatId, { text: t('ai.provide_prompt', {}, userLang) }, { quoted: msg });
 
 
         // Translate Arabic to English for better AI results
-        let promptText = text;
-        try {
-            const trRes = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(text)}`);
-            if (trRes.data && trRes.data[0] && trRes.data[0][0] && trRes.data[0][0][0]) {
-                promptText = trRes.data[0][0][0];
-            }
-        } catch (e) {
-            console.warn('Prompt translation failed, using original:', e.message);
-        }
+        const promptText = await translateToEn(text);
 
         const prompt = encodeURIComponent(promptText);
         const url = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&seed=${Math.floor(Math.random() * 1000000)}&nologo=true`;
 
-        await sock.sendMessage(chatId, { text: "🎨 Creating your masterpiece... Please wait." }, { quoted: msg });
+        await sock.sendMessage(chatId, { text: t('ai.wait', {}, userLang) }, { quoted: msg });
 
         const response = await axios.get(url, { responseType: 'arraybuffer' });
         const buffer = Buffer.from(response.data, 'binary');
@@ -35,6 +29,6 @@ module.exports = async (sock, chatId, msg, args, commands, userLang) => {
 
     } catch (err) {
         console.error(err);
-        await sock.sendMessage(chatId, { text: "❌ Failed to generate image. Please try again later." }, { quoted: msg });
+        await sock.sendMessage(chatId, { text: t('ai.error', {}, userLang) }, { quoted: msg });
     }
 };

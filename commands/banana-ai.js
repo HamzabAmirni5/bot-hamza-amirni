@@ -3,6 +3,8 @@ const axios = require('axios');
 const crypto = require('crypto');
 const { sendWithChannelButton } = require('../lib/channelButton');
 const settings = require('../settings');
+const { translateToEn } = require('../lib/translate');
+const { t } = require('../lib/language');
 
 // AES configuration for Banana AI
 const AES_KEY = 'ai-enhancer-web__aes-key';
@@ -60,7 +62,7 @@ async function bananaAiCommand(sock, chatId, msg, args, commands, userLang) {
     }
 
     if (!prompt) {
-        return await sock.sendMessage(chatId, { text: "❌ يرجى تقديم وصف للتعديل المطلوب (Prompt).\nمثال: .banana make it professional" }, { quoted: msg });
+        return await sock.sendMessage(chatId, { text: t('ai.provide_prompt', {}, userLang) }, { quoted: msg });
     }
 
     try {
@@ -74,11 +76,7 @@ async function bananaAiCommand(sock, chatId, msg, args, commands, userLang) {
         if (!buffer) throw new Error("تعذر تحميل الصورة");
 
         // Translate to English
-        let translatedPrompt = prompt;
-        try {
-            const trRes = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(prompt)}`);
-            if (trRes.data?.[0]?.[0]?.[0]) translatedPrompt = trRes.data[0][0][0];
-        } catch (e) { }
+        const translatedPrompt = await translateToEn(prompt);
 
         const resultBuffer = await bananaAI(buffer, translatedPrompt);
         await sock.sendMessage(chatId, { image: resultBuffer, caption: `✅ *تم التعديل بنجاح!*\n📝 *الوصف:* ${prompt}` }, { quoted: msg });
@@ -87,7 +85,7 @@ async function bananaAiCommand(sock, chatId, msg, args, commands, userLang) {
     } catch (error) {
         console.error('Error in Banana AI:', error);
         await sock.sendMessage(chatId, { react: { text: "❌", key: msg.key } });
-        await sendWithChannelButton(sock, chatId, `❌ فشل التعديل.\n⚠️ السبب: ${error.message}`, msg);
+        await sendWithChannelButton(sock, chatId, t('ai.error', {}, userLang) + `\n⚠️ السبب: ${error.message}`, msg);
     }
 }
 

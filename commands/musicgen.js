@@ -2,6 +2,8 @@
 // scrape by malik
 const axios = require("axios");
 const crypto = require("crypto");
+const { translateToEn } = require("../lib/translate");
+const { t } = require("../lib/language");
 
 class MusicFull {
   constructor() {
@@ -93,15 +95,16 @@ class MusicFull {
   }
 }
 
-let handler = async (sock, chatId, msg, args) => {
+let handler = async (sock, chatId, msg, args, commands, userLang) => {
   const text = args.join(" ");
-  if (!text) return sock.sendMessage(chatId, { text: "🎵 Please provide a prompt.\nExample: .musicgen calm piano melody" }, { quoted: msg });
+  if (!text) return sock.sendMessage(chatId, { text: t('ai.provide_prompt', {}, userLang) }, { quoted: msg });
 
-  await sock.sendMessage(chatId, { text: "⏳ Generating music... please wait." }, { quoted: msg });
+  await sock.sendMessage(chatId, { text: t('ai.wait', {}, userLang) }, { quoted: msg });
 
   try {
     const music = new MusicFull();
-    const results = await music.generate(text);
+    const enPrompt = await translateToEn(text);
+    const results = await music.generate(enPrompt);
 
     if (!results.length) throw new Error("No songs generated.");
 
@@ -119,7 +122,7 @@ let handler = async (sock, chatId, msg, args) => {
 
   } catch (e) {
     console.error(e);
-    await sock.sendMessage(chatId, { text: `❌ Error: ${e.message}` }, { quoted: msg });
+    await sock.sendMessage(chatId, { text: t('ai.error', {}, userLang) + `\n${e.message}` }, { quoted: msg });
   }
 };
 

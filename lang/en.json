@@ -132,6 +132,11 @@
         "error_invalid": "❌ Invalid GPT response.",
         "error": "❌ GPT failed. Try again later."
     },
+    "gemini": {
+        "help": "🤖 *Google Gemini AI*\n\n📝 *Usage:*\n{prefix}gemini [question]\n\n💡 *Example:*\n{prefix}gemini Explain quantum computing\n\n⚔️ {botName}",
+        "loading": "🤖 *Gemini is thinking...*",
+        "error": "❌ *Gemini failed. Try again later.*"
+    },
     "cat": {
         "react": "🐱",
         "caption": "🐱 *Meow!* 🐈\n\n⚔️ {botName}",
@@ -279,6 +284,10 @@
         "ghosttag_error": "❌ Failed to send ghost tag.\n⚠️ Reason: {error}"
     },
     "ai": {
+        "wait": "⏳ *Processing, please wait...* 🎨",
+        "provide_prompt": "⚠️ Please provide a description, example:\n.imagine cat on the moon",
+        "error": "❌ Server failed to process your request, try again later.",
+        "success": "✅ Successfully generated!",
         "veo3_help": "✨ *VEO3 Prompt Generator* ✨\n\n🔹 *Usage:*\n{prefix}veo3-prompt [Video idea description]\n\n📝 *Example:*\n{prefix}veo3-prompt create a video about Morocco sunset\n\n💡 Generates professional prompts.\n\n⚔️ {botName}",
         "veo3_result": "✨ *VEO3 Prompt Result:*\n\n{answer}\n\n⚔️ {botName}",
         "veo3_error": "❌ Failed to generate prompt.\n⚠️ Reason: {error}"

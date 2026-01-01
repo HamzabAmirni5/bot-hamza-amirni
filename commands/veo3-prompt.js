@@ -2,6 +2,7 @@ const GeminiService = require('../lib/geminiService');
 const { sendWithChannelButton } = require('../lib/channelButton');
 const settings = require('../settings');
 const { t } = require('../lib/language');
+const { translateToEn } = require('../lib/translate');
 
 async function veo3PromptCommand(sock, chatId, message, args) {
     const text = args.join(' ').trim();
@@ -21,7 +22,8 @@ async function veo3PromptCommand(sock, chatId, message, args) {
         });
 
         const gemini = new GeminiService();
-        const result = await gemini.generate({ prompt: text });
+        const enPrompt = await translateToEn(text);
+        const result = await gemini.generate({ prompt: enPrompt });
 
         if (result.error) {
             throw new Error(result.error);

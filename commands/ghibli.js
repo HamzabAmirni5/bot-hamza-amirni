@@ -1,8 +1,9 @@
 const DailyAPI = require('../lib/dailyApi');
 const { sendWithChannelButton } = require('../lib/channelButton');
-const settings = require('../settings');
+const { translateToEn } = require('../lib/translate');
+const { t } = require('../lib/language');
 
-async function ghibliCommand(sock, chatId, msg, args) {
+async function ghibliCommand(sock, chatId, msg, args, commands, userLang) {
     const prompt = args.join(' ').trim();
 
     if (!prompt) {
@@ -22,19 +23,10 @@ ${settings.prefix}ghibli A girl standing on a hill watching the sunset.
     }
 
     try {
-        await sendWithChannelButton(sock, chatId, '⏳ *جاري توليد الصورة بأسلوب جيبلي...* يرجى الانتظار.', msg);
+        await sendWithChannelButton(sock, chatId, t('ai.wait', {}, userLang), msg);
 
         // Translate prompt to English for better AI results
-        let translatedPrompt = prompt;
-        try {
-            const axios = require('axios');
-            const trRes = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(prompt)}`);
-            if (trRes.data && trRes.data[0] && trRes.data[0][0] && trRes.data[0][0][0]) {
-                translatedPrompt = trRes.data[0][0][0];
-            }
-        } catch (e) {
-            console.warn('Prompt translation failed, using original:', e.message);
-        }
+        const translatedPrompt = await translateToEn(prompt);
 
         const api = new DailyAPI();
         const result = await api.generate({
@@ -57,7 +49,7 @@ ${settings.prefix}ghibli A girl standing on a hill watching the sunset.
 
     } catch (error) {
         console.error('Error in Ghibli command:', error);
-        await sendWithChannelButton(sock, chatId, `❌ فشل توليد الصورة.\n⚠️ السبب: ${error.message || 'خطأ غير معروف'}`, msg);
+        await sendWithChannelButton(sock, chatId, t('ai.error', {}, userLang) + `\n⚠️ السبب: ${error.message || 'خطأ غير معروف'}`, msg);
     }
 }
 

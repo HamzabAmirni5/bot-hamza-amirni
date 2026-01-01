@@ -1,6 +1,7 @@
 const https = require('https');
 const settings = require('../settings');
 const { sendWithChannelButton } = require('../lib/channelButton');
+const { t } = require('../lib/language');
 
 /**
  * Generate a random ID for the request
@@ -114,15 +115,7 @@ async function aiCommand(sock, chatId, msg, args, commands, userLang) {
     const text = args.join(' ').trim();
 
     if (!text) {
-        const helpMsg = `❓ *كيفاش تخدم هاد الخاصية (AI Assistance)*
-
-اكتب السؤال ديالك من بعد الأمر:
-📝 مثال:
-${settings.prefix}ai شنو هو الذكاء الاصطناعي؟
-
-هاد الأمر كيتواصل مع ملقم GPT متطور باش يجاوبك على أي حاجة بغيتي فالحين.
-\n⚔️ ${settings.botName}`;
-        return await sendWithChannelButton(sock, chatId, helpMsg, msg, {}, userLang);
+        return await sock.sendMessage(chatId, { text: t('ai.provide_prompt', {}, userLang) }, { quoted: msg });
     }
 
     try {
@@ -145,7 +138,7 @@ ${settings.prefix}ai شنو هو الذكاء الاصطناعي؟
     } catch (err) {
         console.error('AI Command Error:', err);
         await sock.sendMessage(chatId, { react: { text: "❌", key: msg.key } });
-        await sock.sendMessage(chatId, { text: '❌ عذراً، وقع خطأ أثناء معالجة السؤال. جرب ثاني من بعد.' }, { quoted: msg });
+        await sock.sendMessage(chatId, { text: t('ai.error', {}, userLang) }, { quoted: msg });
     }
 }
 

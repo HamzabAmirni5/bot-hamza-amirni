@@ -3,21 +3,9 @@ const { sendWithChannelButton } = require('../lib/channelButton');
 const settings = require('../settings');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const { uploadImage } = require('../lib/uploadImage');
+const { translateToEn } = require('../lib/translate');
+const { t } = require('../lib/language');
 
-// --- Helper: Translate Arabic to English ---
-async function translateToEn(text) {
-    if (!text) return '';
-    // Basic check if text contains Arabic characters
-    const isArabic = /[\u0600-\u06FF]/.test(text);
-    if (!isArabic) return text;
-
-    try {
-        const res = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(text)}`);
-        return res.data?.[0]?.[0]?.[0] || text;
-    } catch {
-        return text;
-    }
-}
 
 async function generatePollinations(prompt, model = "flux", opts = {}) {
     const {
@@ -86,7 +74,7 @@ async function generateHercai(prompt) {
 }
 
 // --- Main Handler ---
-async function genaiCommand(sock, chatId, msg, args) {
+async function genaiCommand(sock, chatId, msg, args, commands, userLang) {
     const message = msg; // Compatibility alias
     try {
         // 1. Check if it's an image analysis request (reply to image or image with caption)
@@ -136,7 +124,7 @@ async function genaiCommand(sock, chatId, msg, args) {
                 return;
             } catch (err) {
                 console.error('Vision Error:', err);
-                return await sock.sendMessage(chatId, { text: "❌ فشل تحليل الصورة. حاول مرة أخرى." }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: t('ai.error', {}, userLang) }, { quoted: message });
             }
         }
 
@@ -144,13 +132,11 @@ async function genaiCommand(sock, chatId, msg, args) {
         const text = Array.isArray(args) ? args.join(' ') : args;
 
         if (!text || text.trim().length === 0) {
-            const helpMsg = `🎨 *مولد الصور والذكاء الاصطناعي*\r\n\r\n📝 *الاستخدام:*\r\n› ${settings.prefix}genai [وصف الصورة] (يدعم العربية)\r\n› ${settings.prefix}genai [نموذج] | [وصف]\r\n› (للرد على صورة: ${settings.prefix}genai [سؤالك])\r\n\r\n🎭 *نماذج الرسم المتاحة:*\r\n› flux (افتراضي) - جودة عالية\r\n› sdxl - واقعي\r\n› midjourney - فني\r\n› anime - أنمي\r\n› realistic - واقعي جداً\r\n› turbo - سريع\r\n\r\n💡 *أمثلة:*\r\n› ${settings.prefix}genai قطة تلبس نظارات\r\n› ${settings.prefix}genai anime | luffy gear 5\r\n› ${settings.prefix}genai realistic | sunset over mountains\r\n› (قم بالرد على صورة بـ: ${settings.prefix}genai ما هذا؟)\r\n\r\n⚔️ ${settings.botName}`;
-
-            return await sendWithChannelButton(sock, chatId, helpMsg, message);
+            return await sock.sendMessage(chatId, { text: t('ai.provide_prompt', {}, userLang) }, { quoted: message });
         }
 
         await sock.sendMessage(chatId, {
-            text: '🎨 جاري معالجة طلبك، الرجاء الانتظار...'
+            text: t('ai.wait', {}, userLang)
         }, { quoted: message });
 
         const availableModels = ['flux', 'sdxl', 'midjourney', 'anime', 'realistic', 'turbo'];
@@ -169,7 +155,7 @@ async function genaiCommand(sock, chatId, msg, args) {
 
         if (!prompt) {
             return await sock.sendMessage(chatId, {
-                text: `❌ يرجى تقديم وصف الصورة.`
+                text: t('ai.provide_prompt', {}, userLang)
             }, { quoted: message });
         }
 
@@ -187,9 +173,8 @@ async function genaiCommand(sock, chatId, msg, args) {
                 usedApi = 'Hercai';
             } catch (hercaiError) {
                 // Both APIs failed
-                console.error('[GenAI] All image generation APIs failed');
                 return await sock.sendMessage(chatId, {
-                    text: `❌ عذراً، فشل توليد الصورة.\n\n🔧 جرب:\n• استخدم وصف أبسط\n• حاول مرة أخرى بعد قليل\n• تأكد من اتصالك بالإنترنت`
+                    text: t('ai.error', {}, userLang)
                 }, { quoted: message });
             }
         }
@@ -203,7 +188,7 @@ async function genaiCommand(sock, chatId, msg, args) {
     } catch (error) {
         console.error('Error in genai command:', error);
         await sock.sendMessage(chatId, {
-            text: `❌ عذراً، حدث خطأ غير متوقع.\n\n📝 التفاصيل: ${error.message || 'خطأ غير معروف'}`
+            text: t('ai.error', {}, userLang)
         }, { quoted: message });
     }
 }
