@@ -139,8 +139,8 @@ async function pdfCommand(sock, chatId, message, args, commands, userLang) {
                 const buffer = await downloadMediaMessage(targetMsg, 'buffer', {}, { logger: undefined, reuploadRequest: sock.updateMediaMessage });
 
                 // Upload to get URL
-                const { uploadImage } = require('../lib/uploader');
-                const fileUrl = await uploadImage(buffer);
+                const { uploadFile } = require('../lib/uploader');
+                const fileUrl = await uploadFile(buffer); // Uses robust FileIO/Catbox
 
                 // Use robust API for Office conversion
                 const apiUrl = `https://api.vreden.my.id/api/office2pdf?url=${encodeURIComponent(fileUrl)}`;
