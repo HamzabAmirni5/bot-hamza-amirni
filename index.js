@@ -236,17 +236,19 @@ app.listen(port, () => {
     console.log(`Port ${port} is open`);
 
     // Keep-Alive Self-Ping (to prevent sleeping on Koyeb Eco)
-    const publicDomain = process.env.KOYEB_PUBLIC_DOMAIN;
+    const publicDomain = process.env.KOYEB_PUBLIC_DOMAIN || 'national-constrictor-amirni-762a9333.koyeb.app';
     if (publicDomain) {
+        // Prevent sleeping by pinging self every 3 minutes
         setInterval(async () => {
             try {
                 const axios = require('axios');
-                await axios.get(`https://${publicDomain}`);
-                console.log('📡 Keep-Alive ping sent to self');
+                const url = publicDomain.startsWith('http') ? publicDomain : `https://${publicDomain}`;
+                await axios.get(url);
+                console.log('📡 Keep-Alive ping sent to self (Stay Awake)');
             } catch (e) {
-                console.log('📡 Keep-Alive ping failed (expected if site is just waking up)');
+                // Ignore errors, just trying to keep connection open
             }
-        }, 10 * 60 * 1000); // Every 10 minutes
+        }, 3 * 60 * 1000); // Every 3 minutes
     }
 });
 
