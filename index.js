@@ -404,6 +404,10 @@ async function startBot() {
                         `• *Version:* ${settings.version || '2.0.0'}\n` +
                         `• *Mode:* ${settings.commandMode || 'Public'}\n` +
                         `• *Prefix:* ${settings.prefix}\n\n` +
+                        `🔗 *My Accounts:*\n` +
+                        `📸 *Insta:* ${settings.instagram}\n` +
+                        `🎥 *YouTube:* ${settings.youtube}\n` +
+                        `📘 *Facebook:* ${settings.facebookPage}\n\n` +
                         ` *Ready to serve!*`;
 
                     if (sock.user && !sock.isClosed) {

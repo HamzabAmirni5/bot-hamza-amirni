@@ -74,8 +74,8 @@ async function apkCommand(sock, chatId, message, args, commands, userLang) {
             }
 
             const caption = userLang === 'ma'
-                ? `🎮 *اسم التطبيق:* ${app.name}\n📦 *الحزمة:* ${app.package}\n📅 *ميزاجور:* ${app.updated}\n📁 *الحجم:* ${sizeMB} MB\n\n⏬ *هانا كنصيفطو ليك...*\n⚔️ ${settings.botName}`
-                : `🎮 *App Name:* ${app.name}\n📦 *Package:* ${app.package}\n📅 *Updated:* ${app.updated}\n📁 *Size:* ${sizeMB} MB\n\n⏬ *Sending file...*\n⚔️ ${settings.botName}`;
+                ? `🎮 *اسم التطبيق:* ${app.name}\n📦 *الحزمة:* ${app.package}\n📅 *ميزاجور:* ${app.updated}\n📁 *الحجم:* ${sizeMB} MB\n\n🔗 *تابعني (Follow):*\n📸 *Insta:* ${settings.instagram}\n🎥 *YouTube:* ${settings.youtube}\n📘 *Facebook:* ${settings.facebookPage}\n\n⏬ *هانا كنصيفطو ليك...*\n⚔️ ${settings.botName}`
+                : `🎮 *App Name:* ${app.name}\n📦 *Package:* ${app.package}\n📅 *Updated:* ${app.updated}\n📁 *Size:* ${sizeMB} MB\n\n🔗 *Follow Me:*\n📸 *Insta:* ${settings.instagram}\n🎥 *YouTube:* ${settings.youtube}\n📘 *Facebook:* ${settings.facebookPage}\n\n⏬ *Sending file...*\n⚔️ ${settings.botName}`;
 
             // Step 2: React with upload icon
             await sock.sendMessage(chatId, { react: { text: "⬆️", key: message.key } });
@@ -119,6 +119,6 @@ async function apkCommand(sock, chatId, message, args, commands, userLang) {
             await sendWithChannelButton(sock, chatId, errorMsg, message);
         }
 
-    }
 
-    module.exports = apkCommand;
+
+        module.exports = apkCommand;
