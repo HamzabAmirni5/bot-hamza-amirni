@@ -6,8 +6,103 @@ const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const { t } = require('../lib/language');
 const PDFDocument = require('pdfkit');
 
+// Session Store
+const pdfSessions = new Map();
+
 async function pdfCommand(sock, chatId, message, args, commands, userLang) {
-    const text = args.join(' ').trim();
+    const text = args.join(' ').trim().toLowerCase();
+    const senderId = message.key.participant || message.key.remoteJid;
+
+    // --- SESSION MANAGEMENT ---
+
+    // Start Session
+    if (text === 'start') {
+        pdfSessions.set(senderId, {
+            images: [],
+            chatId: chatId, // To ensure we reply in correct chat
+            startTime: Date.now()
+        });
+        const startMsg = userLang === 'ma'
+            ? "📂 *بدينــا ضوسـي جديد!* 📂\n\nدابا صيفط التصاور وحدة بوحدة (أو بزاف دقة وحدة).\nملي تسالي، كتب *.pdf done* باش نجمعهم ليك فملف واحد.\n\n❌ للإلغاء: *.pdf cancel*"
+            : "📂 *PDF Session Started!* 📂\n\nSend images now. When finished, type *.pdf done*.\n❌ To cancel: *.pdf cancel*";
+        await sock.sendMessage(chatId, { text: startMsg }, { quoted: message });
+        return;
+    }
+
+    // Finish Session
+    if (text === 'done' || text === 'stop' || text === 'finish') {
+        const session = pdfSessions.get(senderId);
+        if (!session) {
+            return await sock.sendMessage(chatId, { text: userLang === 'ma' ? "⚠️ مابديتي حتى ضوسي! دير .pdf start" : "⚠️ No active session! Use .pdf start" }, { quoted: message });
+        }
+
+        if (session.images.length === 0) {
+            pdfSessions.delete(senderId);
+            return await sock.sendMessage(chatId, { text: userLang === 'ma' ? "⚠️ ماصيفطتي والو! تلغى الضوسي." : "⚠️ No images sent. Session cancelled." }, { quoted: message });
+        }
+
+        await sock.sendMessage(chatId, { react: { text: "⏳", key: message.key } });
+        await sock.sendMessage(chatId, { text: userLang === 'ma' ? `⏳ كنجمع ${session.images.length} تصويرة فملف PDF...` : `⏳ Merging ${session.images.length} images into PDF...` }, { quoted: message });
+
+        try {
+            const tempDir = path.join(process.cwd(), 'tmp');
+            if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+            const tempFile = path.join(tempDir, `multi_${Date.now()}.pdf`);
+
+            const doc = new PDFDocument({ autoFirstPage: false });
+            const stream = fs.createWriteStream(tempFile);
+            doc.pipe(stream);
+
+            for (const imgBuffer of session.images) {
+                try {
+                    const img = doc.openImage(imgBuffer);
+                    doc.addPage({ size: [img.width, img.height] });
+                    doc.image(img, 0, 0);
+                } catch (err) {
+                    console.error("Error adding image page:", err);
+                }
+            }
+
+            doc.end();
+
+            await new Promise((resolve, reject) => {
+                stream.on('finish', resolve);
+                stream.on('error', reject);
+            });
+
+            await sock.sendMessage(chatId, {
+                document: { url: tempFile },
+                fileName: `Images_${Date.now()}.pdf`,
+                mimetype: "application/pdf",
+                caption: t('pdf.success_image', { botName: settings.botName }, userLang) || "✅ PDF Created Successfully!"
+            }, { quoted: message });
+
+            if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile);
+            pdfSessions.delete(senderId);
+            await sock.sendMessage(chatId, { react: { text: "✅", key: message.key } });
+
+        } catch (e) {
+            console.error('Merge PDF Error:', e);
+            await sock.sendMessage(chatId, { text: "❌ Error merging PDF." }, { quoted: message });
+            pdfSessions.delete(senderId);
+        }
+        return;
+    }
+
+    // Cancel Session
+    if (text === 'cancel') {
+        if (pdfSessions.has(senderId)) {
+            pdfSessions.delete(senderId);
+            await sock.sendMessage(chatId, { text: "✅ Session cancelled/deleted." }, { quoted: message });
+        } else {
+            await sock.sendMessage(chatId, { text: "⚠️ No active session." }, { quoted: message });
+        }
+        return;
+    }
+
+
+    // --- NORMAL SINGLE FILE LOGIC ---
+
     const quoted = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
     const isQuotedImage = quoted?.imageMessage;
     const isDirectImage = message.message?.imageMessage;
@@ -49,23 +144,8 @@ async function pdfCommand(sock, chatId, message, args, commands, userLang) {
 
                 // Use robust API for Office conversion
                 const apiUrl = `https://api.vreden.my.id/api/office2pdf?url=${encodeURIComponent(fileUrl)}`;
-                // Alternative: https://api.maher-zubair.tech/maker/doc2pdf?url=${fileUrl}
-
-                // This API returns a JSON with 'result' (buffer or url) or raw buffer? 
-                // Usually vreden returns valid buffer for some tools, or url. 
-                // Let's assume URL or check content-type.
-                // NOTE: User wants "bhal minasa" (reliable).
-                // Downloading buffer from API.
 
                 const response = await require('axios').get(apiUrl, { responseType: 'arraybuffer' });
-
-                // If it's JSON error
-                try {
-                    const json = JSON.parse(response.data.toString());
-                    if (json.status === false || !json.data) throw new Error("API refused");
-                } catch (e) {
-                    // Not JSON, so it is likely the PDF buffer
-                }
 
                 const tempDir = path.join(process.cwd(), 'tmp');
                 if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
@@ -103,8 +183,8 @@ async function pdfCommand(sock, chatId, message, args, commands, userLang) {
             if (isQuotedImage) {
                 targetMsg.key = {
                     remoteJid: chatId,
-                    id: message.message.extendedTextMessage.contextInfo.stanzaId,
-                    participant: message.message.extendedTextMessage.contextInfo.participant
+                    id: message.message?.extendedTextMessage?.contextInfo?.stanzaId,
+                    participant: message.message?.extendedTextMessage?.contextInfo?.participant
                 };
             }
 
@@ -153,13 +233,9 @@ async function pdfCommand(sock, chatId, message, args, commands, userLang) {
     // 2. Handle Text to PDF
     const content = text || quoted?.conversation || quoted?.extendedTextMessage?.text;
 
-    if (content) {
+    if (content && text !== 'start' && text !== 'done') {
         try {
             await sock.sendMessage(chatId, { react: { text: "⏳", key: message.key } });
-
-            // For Text, we still try to use PDFKit but it won't support Arabic well without fonts.
-            // So we will stick to Local PDFKit for English/Latin, but warn or try API for others?
-            // Actually, let's try local first. If it's simple text, it works.
 
             const tempDir = path.join(process.cwd(), 'tmp');
             if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
@@ -199,10 +275,36 @@ async function pdfCommand(sock, chatId, message, args, commands, userLang) {
 
     // 3. Show Usage Help
     const helpMsg = userLang === 'ma'
-        ? `📄 *تحويل إلى PDF* 📄\n\n🔹 *الاستخدام:*\n1. صيفط تصويرة واكتب معاها ${settings.prefix}pdf\n2. أو جاوب على تصويرة بـ ${settings.prefix}pdf\n3. أو كتب نص: ${settings.prefix}pdf [النص]\n\n⚔️ ${settings.botName}`
-        : `📄 *PDF Converter* 📄\n\n🔹 *Usage:*\n1. Send/Reply to Image/Doc with ${settings.prefix}pdf\n2. Type text: ${settings.prefix}pdf [text]`;
+        ? `📄 *تحويل إلى PDF* 📄\n\n🔹 *الاستخدام:*\n1. صيفط تصويرة واكتب معاها ${settings.prefix}pdf\n2. كتب ${settings.prefix}pdf start باش تجمع بزاف د التصاور.\n3. أو كتب نص: ${settings.prefix}pdf [النص]\n\n⚔️ ${settings.botName}`
+        : `📄 *PDF Converter* 📄\n\n🔹 *Usage:*\n1. Send/Reply Image with ${settings.prefix}pdf\n2. ${settings.prefix}pdf start (Multiple Images)\n3. ${settings.prefix}pdf [text]`;
 
     return await sendWithChannelButton(sock, chatId, helpMsg, message);
 }
+
+// Handler for collecting images
+pdfCommand.handleSession = async (sock, msg, senderId) => {
+    if (pdfSessions.has(senderId)) {
+        const session = pdfSessions.get(senderId);
+
+        // Check for Image
+        const isImage = msg.message?.imageMessage;
+
+        if (isImage) {
+            console.log(`[PDF Session] Collecting image from ${senderId}`);
+            try {
+                const buffer = await downloadMediaMessage(msg, 'buffer', {}, { logger: undefined, reuploadRequest: sock.updateMediaMessage });
+                if (buffer) {
+                    session.images.push(buffer);
+                    // Acknowledge receipt silently or with reaction
+                    await sock.sendMessage(msg.key.remoteJid, { react: { text: "📥", key: msg.key } });
+                }
+            } catch (e) {
+                console.error("Failed to download session image", e);
+            }
+            return true; // Stop other handlers? No, but we handled it.
+        }
+    }
+    return false;
+};
 
 module.exports = pdfCommand;
