@@ -331,6 +331,47 @@ async function startBot() {
             console.log(chalk.green(`• 🤖 Bot Connected Successfully! ✅`));
             console.log(chalk.white(`Bot Version: ${settings.version || '2.0.0'}`));
 
+            // Send Connected Message to Self (Bot Number)
+            setTimeout(async () => {
+                try {
+                    const botJid = sock.user.id.split(':')[0] + '@s.whatsapp.net';
+
+                    // Prepare Thumbnail
+                    let thumbBuffer = null;
+                    try {
+                        const thumbPath = path.resolve(__dirname, settings.botThumbnail || './media/hamza.jpg');
+                        if (fs.existsSync(thumbPath)) {
+                            thumbBuffer = fs.readFileSync(thumbPath);
+                        }
+                    } catch (e) { console.error('Error reading thumbnail for startup msg:', e); }
+
+                    const msgText = `🤖 *Bot Connected Successfully!* ✅\n\n` +
+                        `• *Version:* ${settings.version || '2.0.0'}\n` +
+                        `• *Mode:* ${settings.commandMode || 'Public'}\n` +
+                        `• *Prefix:* ${settings.prefix}\n\n` +
+                        `🔗 *Socials:*\n` +
+                        `• 📺 YouTube: ${settings.youtube}\n` +
+                        `• 📸 Instagram: ${settings.instagram}\n` +
+                        `• 📢 Channel: ${settings.officialChannel}\n\n` +
+                        `🚀 *Ready to serve!*`;
+
+                    if (thumbBuffer) {
+                        // Send as image with caption
+                        await sock.sendMessage(botJid, {
+                            image: thumbBuffer,
+                            caption: msgText
+                        });
+                    } else {
+                        // Fallback to text only
+                        await sock.sendMessage(botJid, {
+                            text: msgText
+                        });
+                    }
+                } catch (err) {
+                    console.error('Failed to send self-connected message:', err);
+                }
+            }, 2000);
+
             // Background Services with stabilization delay
             setTimeout(() => {
                 if (!sock.user) return;

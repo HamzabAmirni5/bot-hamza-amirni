@@ -1,6 +1,8 @@
 const settings = require('../settings');
 const { t } = require('../lib/language');
 const { sendWithChannelButton } = require('../lib/channelButton');
+const fs = require('fs');
+const path = require('path');
 
 module.exports = async (sock, chatId, msg, args, commands, userLang) => {
     try {
@@ -23,9 +25,9 @@ module.exports = async (sock, chatId, msg, args, commands, userLang) => {
             'new': ['edit', 'genai', 'banana-ai', 'ghibli', 'tomp3', 'resetlink', 'apk', 'apk2', 'hidetag', 'imdb', 'simp'],
             'religion': ['quran', 'salat', 'prayertimes', 'adhan', 'hadith', 'asmaa', 'azkar', 'qibla', 'ad3iya', 'dua', 'athan', 'tafsir', 'surah', 'ayah', 'fadlsalat', 'hukm', 'qiyam', 'danb', 'nasiha', 'tadabbur', 'sahaba', 'faida', 'hasanat', 'jumaa', 'hajj', 'sira', 'mawt', 'shirk', 'hub', 'deen'],
             'download': ['facebook', 'instagram', 'tiktok', 'youtube', 'mediafire', 'github', 'play', 'song', 'video', 'ytplay', 'yts'],
-            'ai': ['gpt', 'gemini', 'deepseek', 'imagine', 'aiart', 'miramuse', 'ghibli-art', 'faceswap', 'ai-enhance', 'colorize', 'remini', 'vocalremover'],
+            'ai': ['gpt', 'gemini', 'deepseek', 'imagine', 'aiart', 'miramuse', 'ghibli-art', 'faceswap', 'ai-enhance', 'colorize', 'remini', 'vocalremover', 'musicgen', 'hdvideo', 'winkvideo', 'unblur', 'removebg', 'brat-vd'],
             'group': ['kick', 'promote', 'demote', 'tagall', 'hidetag', 'mute', 'unmute', 'close', 'open', 'delete', 'staff', 'groupinfo', 'welcome', 'goodbye', 'warn', 'warnings', 'antibadword', 'antilink'],
-            'tools': ['sticker', 'sticker-alt', 'attp', 'ttp', 'ocr', 'tts', 'say', 'toimage', 'tovideo', 'togif', 'qrcode', 'ss', 'lyrics', 'calc', 'img-blur', 'translate'],
+            'tools': ['sticker', 'sticker-alt', 'attp', 'ttp', 'ocr', 'tts', 'say', 'toimage', 'tovideo', 'togif', 'qrcode', 'ss', 'lyrics', 'calc', 'img-blur', 'translate', 'readviewonce', 'upload'],
             'news': ['news', 'akhbar', 'football', 'kora', 'weather', 'taqes'],
             'fun': ['joke', 'fact', 'quote', 'meme', 'character', 'truth', 'dare', 'ship', 'ngl', '4kwallpaper'],
             'games': ['menugame', 'xo', 'rps', 'math', 'guess', 'scramble', 'riddle', 'quiz', 'love', 'hangman', 'trivia'],
@@ -47,16 +49,56 @@ module.exports = async (sock, chatId, msg, args, commands, userLang) => {
             'alive': '🟢', 'ping': '⚡', 'owner': '👑', 'help': '❓'
         };
 
-        // 3. Runtime Stats
+        // 3. Runtime Stats & Thumbnail
         const runtime = process.uptime();
         const days = Math.floor(runtime / 86400);
         const hours = Math.floor((runtime % 86400) / 3600);
         const minutes = Math.floor((runtime % 3600) / 60);
 
-        const header = `✨ *${t('common.botName', {}, userLang).toUpperCase()}* ✨\n` +
-            `🤵‍♂️ *DEVELOPER:* ${t('common.botOwner', {}, userLang)}\n` +
-            `⚡ *UPTIME:* ${days}d ${hours}h ${minutes}m\n` +
-            `━━━━━━━━━━━━━━━━━━━\n\n`;
+        let thumbBuffer = null;
+        try {
+            // Try to resolve the path relative to the root or absolute
+            let thumbPath = settings.botThumbnail;
+            if (!path.isAbsolute(thumbPath)) {
+                thumbPath = path.join(__dirname, '..', thumbPath);
+            }
+            if (fs.existsSync(thumbPath)) {
+                thumbBuffer = fs.readFileSync(thumbPath);
+            }
+        } catch (e) { console.error('Error reading thumbnail:', e); }
+
+        // Pretty Date Time
+        const date = new Date();
+        const timeString = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        const dateString = date.toLocaleDateString('en-GB');
+
+        const header =
+            `┏━━━ ❰ *${t('common.botName', {}, userLang).toUpperCase()}* ❱ ━━━┓\n` +
+            `┃ 🤵‍♂️ *Owner:* ${t('common.botOwner', {}, userLang)}\n` +
+            `┃ 📆 *Date:* ${dateString}\n` +
+            `┃ ⌚ *Time:* ${timeString}\n` +
+            `┃ ⏳ *Uptime:* ${days}d ${hours}h ${minutes}m\n` +
+            `┃ 🤖 *Ver:* ${settings.version || '2.0.0'}\n` +
+            `┗━━━━━━━━━━━━━━━━━━┛\n\n`;
+
+        // Common Send Function with Image
+        const sendMenu = async (text, title = "✨ Hamza Amirni Bot ✨") => {
+            // Add channel link to the bottom of text
+            const fullText = text + `\n\n📢 *القناة الرسمية:*\n${settings.officialChannel}`;
+
+            if (thumbBuffer) {
+                // Send as image with caption
+                await sock.sendMessage(chatId, {
+                    image: thumbBuffer,
+                    caption: fullText
+                }, { quoted: msg });
+            } else {
+                // Fallback to text only
+                await sock.sendMessage(chatId, {
+                    text: fullText
+                }, { quoted: msg });
+            }
+        };
 
         // --- PRIORITY 1: Sub-Menu/Category Aliases ---
         if (requested) {
@@ -66,124 +108,7 @@ module.exports = async (sock, chatId, msg, args, commands, userLang) => {
                 return await allmenu(sock, chatId, msg, args, commands, userLang);
             }
 
-            // Islamic Sub-Menu
-            if (islamicAliases.includes(requested)) {
-                let islamicMenu = `🕌 *الموسوعة الإسلامية* 🕌\n\n` +
-                    `📖 .quran - تلاوة القرآن\n` +
-                    `💬 .tafsir - تفسير الآيات\n` +
-                    `🕋 .prayertimes - أوقات الصلاة\n` +
-                    `🕌 .fadlsalat - فضل صلاة\n` +
-                    `📌 .hukm - حكم شرعي\n` +
-                    `🌙 .qiyam - قيام الليل\n` +
-                    `🔥 .danb - ذنب مهلك\n` +
-                    `💡 .nasiha - نصيحة دينية\n` +
-                    `✨ .sahaba - قصة صحابي\n` +
-                    `📖 .qisas - قصص الأنبياء والعبر\n` +
-                    `📚 .hadith_long - أحاديث نبوية وقصص\n` +
-                    `✨ .sahaba_long - قصص الصحابة والتابعين\n\n` +
-                    `🔙 اكتب *.menu* للرجوع للقائمة.`;
-                return await sendWithChannelButton(sock, chatId, islamicMenu, msg, {}, userLang);
-            }
-
-            // Games Sub-Menu
-            if (gameAliases.includes(requested)) {
-                let gameMenu = `🎮 *MEGA GAME MENU* 🎮\n\n` +
-                    `🕹️ *ألعاب فردية:*\n` +
-                    `🎲 .guess | 🤖 .rps | 🎰 .slots\n` +
-                    `🧮 .math | 🧩 .riddle | 🤔 .truefalse\n\n` +
-                    `🔥 *ألعاب جماعية:*\n` +
-                    `❌ .xo | ❓ .quiz | ❤️ .love\n\n` +
-                    `🔙 اكتب *.menu* للرجوع للقائمة.`;
-                return await sendWithChannelButton(sock, chatId, gameMenu, msg, {}, userLang);
-            }
-
-            // AI Sub-Menu
-            if (aiAliases.includes(requested)) {
-                let aiMenu = `🤖 *مركز الذكاء الاصطناعي (Imperial AI)* 🤖\n\n` +
-                    `🤖 .gpt : سول GPT\n` +
-                    `♊ .gemini : سول Gemini\n` +
-                    `🧠 .deepseek : موديل ذكي جديد\n` +
-                    `🖼️ .imagine : تخيل معايا (رسم)\n` +
-                    `🌟 .aiart : فن واعر بالذكاء\n` +
-                    `◽ .miramuse : إبداع موسيقي\n` +
-                    `🎨 .ghibli-art : ستايل جيبلي\n` +
-                    `◽ .faceswap : بدل الوجه ف التصويرة\n` +
-                    `◽ .ai-enhance : زيين ونقي التصويرة\n` +
-                    `◽ .colorize : لون التصاور القدام\n` +
-                    `✨ .remini : وضح التصويرة الضبابية\n` +
-                    `🎙️ .vocalremover : حيد الموسيقى وخلي الصوت\n\n` +
-                    `🔙 اكتب *.menu* للرجوع للقائمة.`;
-                return await sendWithChannelButton(sock, chatId, aiMenu, msg, {}, userLang);
-            }
-
-            // Special Custom Help: MiraMuse
-            if (requested === 'miramuse') {
-                const miraHelp = `🖼️ *مولد الصور MiraMuse AI* 🖼️\n\n` +
-                    `أنشئ صوراً احترافية عالية الجودة باستخدام نماذج وأحجام مختلفة.\n\n` +
-                    `🔧 *كيفية الاستخدام:*\n` +
-                    `${prefix}miramuse [الوصف] | [الموديل] | [المقاس]\n\n` +
-                    `📝 *مثال:*\n` +
-                    `${prefix}miramuse beautiful cyberpunk girl | anime | 3:4\n\n` +
-                    `📌 *الموديلات المتاحة:*\n` +
-                    `flux, tamarin, superAnime, visiCanvas, realistic, oldRealistic, anime, 3danime\n\n` +
-                    `📌 *المقاسات المتاحة:*\n` +
-                    `1:2, 9:16, 3:4, 1:1, 4:3, 16:9, 2:1\n\n` +
-                    `⚔️ *حمزة اعمرني*`;
-
-                return await sendWithChannelButton(sock, chatId, miraHelp, msg, {}, userLang);
-            }
-        }
-
-        // --- PRIORITY 2: Individual Command Help ---
-        if (requested && commands.has(requested)) {
-            const desc = t(`command_desc.${requested}`, {}, userLang);
-            if (!desc.startsWith('command_desc.')) {
-                return await sendWithChannelButton(sock, chatId,
-                    `💡 *${t('menu.title', {}, userLang)}:* ${prefix}${requested}\n\n` +
-                    `📝 *الشرح:* ${desc}\n\n` +
-                    `� *المطور:* ${t('common.botOwner', {}, userLang)}`,
-                    msg, {}, userLang
-                );
-            }
-        }
-
-        // --- PRIORITY 3: General Category Display ---
-        let menuText = "";
-        let isGeneralHelp = false;
-
-        if (!requested) {
-            isGeneralHelp = true;
-            menuText = header + `🔱 *مرحباً بك في إمبراطورية حمزة اعمرني* 🔱\n` +
-                `تجربة فريدة كتمزج بين الذكاء، الخدمات الدينية والترفيه بلمسة احترافية.. اختار وجهتك الآن:\n\n`;
-
-            const sectionDividers = {
-                'new': '🚀 *الأقسام الأساسية*',
-                'religion': '🕌 *الركن الديني (الموسوعة)*',
-                'download': '📥 *قسم الوسائط والتحميل*',
-                'fun': '🤣 *الترفيه والنشاط*',
-                'general': '⚙️ *الإدارة والنظام*'
-            };
-
-            for (const key of Object.keys(catMap)) {
-                if (sectionDividers[key]) menuText += `\n${sectionDividers[key]}\n`;
-                let icon = '📂';
-                let cmdAlias = key;
-                if (key === 'new') icon = '🔥';
-                else if (key === 'religion') { icon = '🕌'; cmdAlias = 'deen'; }
-                else if (key === 'download') { icon = '📥'; cmdAlias = 'tahmilat'; }
-                else if (key === 'ai') icon = '🤖';
-                else if (key === 'fun') { icon = '🤣'; cmdAlias = 'dahik'; }
-                else if (key === 'games') { icon = '🎮'; cmdAlias = 'game'; }
-                else if (key === 'tools') { icon = '🛠️'; cmdAlias = 'adawat'; }
-                else if (key === 'owner') { icon = '👑'; cmdAlias = 'molchi'; }
-                else if (key === 'general') { icon = '⚙️'; cmdAlias = '3am'; }
-
-                menuText += `${icon} *${prefix}menu ${cmdAlias}*\n`;
-            }
-            menuText += `\n🌟 *${prefix}menu all* - إمبراطورية الأوامر\n`;
-            menuText += `\n💡 *مثال:* لإظهار أوامر الضحك، اكتب *.menu dahik*`;
-        } else {
-            // General Category fallback (if not caught by specific sub-menus above)
+            // General Category fallback (if not caught by specific sub-menus)
             let selectedKey = null;
             if (catMap[requested]) selectedKey = requested;
             else if (funAliases.includes(requested)) selectedKey = 'fun';
@@ -194,33 +119,128 @@ module.exports = async (sock, chatId, msg, args, commands, userLang) => {
 
             if (selectedKey) {
                 const catName = t(`menu.categories.${selectedKey}`, {}, userLang);
-                menuText = header + `*【 ${catName.toUpperCase()} 】*\n\n`;
+                let menuText = header + `┌─── ❰ *${catName.toUpperCase()}* ❱ ───┐\n\n`;
+
+                // Special Note for Downloads
+                if (selectedKey === 'download') {
+                    menuText += `🚀 *ملاحظة:* البوت كيتيليشارجي تلقائياً من أي رابط (Insta, TikTok, FB, YouTube) غير صيفط الليان بوحدو!\n\n`;
+                }
 
                 catMap[selectedKey].forEach(c => {
-                    const icon = cmdIcons[c] || '◽';
+                    const icon = cmdIcons[c] || '▫️';
                     const desc = t(`command_desc.${c}`, {}, userLang);
-                    const descText = desc.startsWith('command_desc.') ? '' : ` : _${desc}_`;
-                    menuText += `${icon} *${prefix}${c}*${descText}\n`;
+                    const descText = desc.startsWith('command_desc.') ? '' : ` : ${desc}`;
+                    menuText += `│ ${icon} *${prefix}${c}*${descText}\n`;
                 });
-                menuText += `\n🔙 اكتب *.menu* للرجوع للقائمة.`;
-            } else {
-                menuText = `❌ قسم غير متاح. اكتب *.menu* لمشاهدة الأقسام الرئيسية.`;
+                menuText += `\n└──────────────────────┘\n`;
+                menuText += `\n🔙 اكتب *.menu* للرجوع للقائمة الرئيسية.`;
+                return await sendMenu(menuText, `${catName} Menu`);
+            }
+
+            // Islamic Sub-Menu
+            if (islamicAliases.includes(requested)) {
+                let islamicMenu = header + `┌─── ❰ *الموسوعة الإسلامية* ❱ ───┐\n\n` +
+                    `📖 .quran : تلاوة القرآن\n` +
+                    `💬 .tafsir : تفسير الآيات\n` +
+                    `🕋 .prayertimes : أوقات الصلاة\n` +
+                    `🕌 .fadlsalat : فضل صلاة\n` +
+                    `📌 .hukm : حكم شرعي\n` +
+                    `🌙 .qiyam : قيام الليل\n` +
+                    `🔥 .danb : ذنب مهلك\n` +
+                    `💡 .nasiha : نصيحة دينية\n` +
+                    `✨ .sahaba : قصة صحابي\n` +
+                    `📖 .qisas : قصص الأنبياء والعبر\n` +
+                    `📚 .hadith_long : أحاديث نبوية وقصص\n` +
+                    `✨ .sahaba_long : قصص الصحابة والتابعين\n\n` +
+                    `└──────────────────────┘\n` +
+                    `🔙 اكتب *.menu* للرجوع للقائمة.`;
+                return await sendMenu(islamicMenu, "Islamic Menu");
+            }
+            // Games Sub-Menu
+            if (gameAliases.includes(requested)) {
+                let gameMenu = header + `┌─── ❰ *MEGA GAME MENU* ❱ ───┐\n\n` +
+                    `🕹️ *ألعاب فردية:*\n` +
+                    `🎲 .guess | 🤖 .rps | 🎰 .slots\n` +
+                    `🧮 .math | 🧩 .riddle | 🤔 .truefalse\n\n` +
+                    `🔥 *ألعاب جماعية:*\n` +
+                    `❌ .xo | ❓ .quiz | ❤️ .love\n\n` +
+                    `└──────────────────────┘\n` +
+                    `🔙 اكتب *.menu* للرجوع للقائمة.`;
+                return await sendMenu(gameMenu, "Game Menu");
+            }
+
+            // AI Sub-Menu
+            if (aiAliases.includes(requested)) {
+                let aiMenu = header + `┌─── ❰ *مركز الذكاء الاصطناعي* ❱ ───┐\n\n` +
+                    `🎵 .musicgen : صايب موسيقى من والو\n` +
+                    `🤖 .gpt : سول GPT\n` +
+                    `♊ .gemini : سول Gemini\n` +
+                    `🖼️ .imagine : تخيل معايا (رسم)\n` +
+                    `🌟 .aiart : فن واعر بالذكاء\n` +
+                    `📀 .hdvideo : وضح الفيديو 2K\n` +
+                    `📹 .winkvideo : زيد ف الجودة د الفيديو\n` +
+                    `🖼️ .removebg : حيد الخلفية\n` +
+                    `✨ .unblur : صفّي التصويرة\n` +
+                    `🎞️ .brat-vd : نص إلى فيديو (Brat)\n` +
+                    `🎨 .ghibli-art : ستايل جيبلي\n` +
+                    `◽ .faceswap : بدل الوجه ف التصويرة\n` +
+                    `◽ .ai-enhance : زيين ونقي التصويرة\n` +
+                    `◽ .colorize : لون التصاور القدام\n` +
+                    `✨ .remini : وضح التصويرة الضبابية\n` +
+                    `🎙️ .vocalremover : حيد الموسيقى وخلي الصوت\n\n` +
+                    `└──────────────────────┘\n` +
+                    `🔙 اكتب *.menu* للرجوع للقائمة.`;
+                return await sendMenu(aiMenu, "AI Menu");
+            }
+
+            // Individual Command Help
+            if (commands.has(requested)) {
+                const desc = t(`command_desc.${requested}`, {}, userLang);
+                if (!desc.startsWith('command_desc.')) {
+                    return await sendMenu(
+                        `💡 *الأمر:* ${prefix}${requested}\n` +
+                        `📝 *الشرح:* ${desc}\n` +
+                        `🤖 *المطور:* ${settings.botOwner}`,
+                        `Help: ${requested}`
+                    );
+                }
             }
         }
 
-        // --- 4. Final Delivery ---
-        if (isGeneralHelp) {
-            const fs = require('fs');
-            let imageHandle = { url: settings.botThumbnail };
-            if (!settings.botThumbnail.startsWith('http') && fs.existsSync(settings.botThumbnail)) {
-                imageHandle = { image: fs.readFileSync(settings.botThumbnail) };
-            } else {
-                imageHandle = { image: { url: settings.botThumbnail } };
-            }
-            await sock.sendMessage(chatId, imageHandle, { quoted: msg });
+        // --- PRIORITY 3: General Category Display (Main Menu) ---
+        let menuText = header +
+            `🏰 *مرحباً بك في إمبراطورية الأوامر* 🏰\n` +
+            `بوت شامل، ذكي، وسريع.. كلشي بين يديك! اختر القسم المناسب:\n\n`;
+
+        const sectionDividers = {
+            'new': '🚀 *الأقسام الأساسية (Hot)*',
+            'religion': '🕌 *الركن الديني*',
+            'download': '📥 *التحميلات (Downloads)*',
+            'fun': '🤣 *الترفيه (Fun)*',
+            'general': '⚙️ *النظام (System)*'
+        };
+
+        for (const key of Object.keys(catMap)) {
+            if (sectionDividers[key]) menuText += `\n${sectionDividers[key]}\n`;
+            let icon = '📂';
+            let cmdAlias = key;
+            if (key === 'new') icon = '🔥';
+            else if (key === 'religion') { icon = '🕌'; cmdAlias = 'deen'; }
+            else if (key === 'download') { icon = '📥'; cmdAlias = 'tahmilat'; }
+            else if (key === 'ai') icon = '🤖';
+            else if (key === 'fun') { icon = '🤣'; cmdAlias = 'dahik'; }
+            else if (key === 'games') { icon = '🎮'; cmdAlias = 'game'; }
+            else if (key === 'tools') { icon = '🛠️'; cmdAlias = 'adawat'; }
+            else if (key === 'owner') { icon = '👑'; cmdAlias = 'molchi'; }
+            else if (key === 'general') { icon = '⚙️'; cmdAlias = '3am'; }
+
+            menuText += `┃ ${icon} *${prefix}menu ${cmdAlias}*\n`;
         }
 
-        await sendWithChannelButton(sock, chatId, menuText, msg, {}, userLang);
+        menuText += `\n🌟 *${prefix}menu all* - عرض كل الأوامر دفعة واحدة\n`;
+        menuText += `\n💡 *معلومة:* البوت كيتيليشارجي تلقائياً (Auto DL) من أي رابط!`;
+
+        await sendMenu(menuText, "Main Menu");
 
     } catch (error) {
         console.error('Error in help command:', error);
