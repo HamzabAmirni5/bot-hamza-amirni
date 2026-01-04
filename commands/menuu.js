@@ -1,6 +1,4 @@
 const settings = require('../settings');
-const { t } = require('../lib/language');
-const { sendWithChannelButton } = require('../lib/channelButton');
 const fs = require('fs');
 const path = require('path');
 
@@ -9,7 +7,7 @@ module.exports = async (sock, chatId, msg, args, commands, userLang) => {
         const prefix = settings.prefix;
         const botName = settings.botName || 'حمزة اعمرني';
 
-        // Stats
+        // Runtime
         const runtime = process.uptime();
         const days = Math.floor(runtime / 86400);
         const hours = Math.floor((runtime % 86400) / 3600);
@@ -27,73 +25,125 @@ module.exports = async (sock, chatId, msg, args, commands, userLang) => {
         } catch (e) { console.error('Error reading thumbnail:', e); }
 
         const date = new Date();
-        const dateString = date.toLocaleDateString('ar-MA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        const timeString = date.toLocaleTimeString('ar-MA', { hour: '2-digit', minute: '2-digit' });
+        const dateStr = date.toLocaleDateString('ar-MA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const timeStr = date.toLocaleTimeString('ar-MA', { hour: '2-digit', minute: '2-digit' });
 
-        let menuText = `*─── ❰ 🛡️ قائمة ${botName.toUpperCase()} ❱ ───*\n\n`;
+        let menuText = `*┏━━❰ ⚔️ ${botName.toUpperCase()} ⚔️ ❱━━┓*\n┃\n`;
 
-        menuText += `👤 *المطور:* حمزة اعمرني\n`;
-        menuText += `📅 *التاريخ:* ${dateString}\n`;
-        menuText += `⌚ *الوقت:* ${timeString}\n`;
-        menuText += `⏳ *مدة العمل:* ${days}ي ${hours}س ${minutes}د\n`;
-        menuText += `🤖 *الإصدار:* ${settings.version || '2026.1.1'}\n`;
-        menuText += `\n*━━━━━━━━━━━━━━━━━━━━━━*\n\n`;
+        menuText += `┃ 🤵‍♂️ *المطور:* حمزة اعمرني\n`;
+        menuText += `┃ 📅 *التاريخ:* ${dateStr}\n`;
+        menuText += `┃ ⌚ *الوقت:* ${timeStr}\n`;
+        menuText += `┃ ⏳ *النشاط:* ${days}d ${hours}h ${minutes}m\n`;
+        menuText += `┃ 🤖 *الإصدار:* 2026.1.1\n`;
+        menuText += `┃\n`;
+        menuText += `*┗━━━━━━━━━━━━━━━━━━━┛*\n\n`;
 
-        menuText += `💡 *ملاحظة:* استعمل النقطة قبل أي أمر.\n`;
-        menuText += `مثال: *.menu*\n\n`;
+        // 🕌 الإسلاميات
+        menuText += `*╭━━❰ 🕌 الركن الديني ❱━━╮*\n`;
+        menuText += `┃ 📖 .قرآن (quran)\n`;
+        menuText += `┃ 🕌 .صلاة (salat)\n`;
+        menuText += `┃ 🕌 .مواقيت (prayertimes)\n`;
+        menuText += `┃ 📢 .أذان (adhan)\n`;
+        menuText += `┃ 📚 .حديث (hadith)\n`;
+        menuText += `┃ 🤲 .أدعية (ad3iya)\n`;
+        menuText += `┃ ✨ .أسماء (asmaa)\n`;
+        menuText += `┃ 📿 .أذكار (azkar)\n`;
+        menuText += `┃ 🧭 .قبلة (qibla)\n`;
+        menuText += `┃ 📖 .تفسير (tafsir)\n`;
+        menuText += `┃ 🕊️ .سيرة (sira)\n`;
+        menuText += `┃ 📜 .قصص (qisas)\n`;
+        menuText += `*╰━━━━━━━━━━━━━━━━━━━╯*\n\n`;
 
-        // 🕌 1. الركن الديني
-        menuText += `🕌 *──❰ .دين / .إسلاميات ❱──*\n`;
-        menuText += `📖 .قرآن | 🕋 .صلاة | 🤲 .أدعية\n`;
-        menuText += `📢 .أذان | 📚 .حديث | ✨ .أسماء\n`;
-        menuText += `📿 .أذكار | 🧭 .قبلة | 📖 .تفسير\n`;
-        menuText += `🏛️ .fadlsalat | 📌 .hukm | 🌙 .qiyam\n`;
-        menuText += `🕊️ .sira | ⏳ .mawt | 🌴 .jannah\n\n`;
+        // 🤖 الذكاء الاصطناعي
+        menuText += `*╭━━❰ 🤖 الذكاء الاصطناعي ❱━━╮*\n`;
+        menuText += `┃ 🧠 .ذكاء (gpt)\n`;
+        menuText += `┃ ♊ .جيميني (gemini)\n`;
+        menuText += `┃ 🖼️ .تخيل (imagine)\n`;
+        menuText += `┃ 🎨 .فن (aiart)\n`;
+        menuText += `┃ 🎭 .جيبلي (ghibli)\n`;
+        menuText += `┃ 🍌 .نانو (nanobanana)\n`;
+        menuText += `┃ 📸 .سكرين (screenshot)\n`;
+        menuText += `┃ 🔍 .جيميني-حلل (analyze)\n`;
+        menuText += `┃ ✨ .توضيح (remini)\n`;
+        menuText += `┃ 🪄 .تحسين (enhance)\n`;
+        menuText += `┃ 🖌️ .تلوين (colorize)\n`;
+        menuText += `┃ 🧪 .حذف_خلفية (removebg)\n`;
+        menuText += `*╰━━━━━━━━━━━━━━━━━━━╯*\n\n`;
 
-        // 📥 2. التحميلات
-        menuText += `📥 *──❰ .تحميل / .تنزيل ❱──*\n`;
-        menuText += `🎬 .يوتيوب | 📸 .انستغرام | 🔵 .فيسبوك\n`;
-        menuText += `🎵 .تيكتوك | 📂 .ميديافاير | 🎧 .play\n`;
-        menuText += `🎥 .فيديو | 🎶 .song | 🔍 .بحث\n\n`;
+        // 📥 التحميلات
+        menuText += `*╭━━❰ 📥 قسم التحميلات ❱━━╮*\n`;
+        menuText += `┃ 🎬 .يوتيوب (youtube)\n`;
+        menuText += `┃ 📸 .انستغرام (instagram)\n`;
+        menuText += `┃ 🔵 .فيسبوك (facebook)\n`;
+        menuText += `┃ 🎵 .تيكتوك (tiktok)\n`;
+        menuText += `┃ 📂 .ميديافاير (mediafire)\n`;
+        menuText += `┃ 🎧 .شغل (play)\n`;
+        menuText += `┃ 🎥 .فيديو (video)\n`;
+        menuText += `┃ 🎶 .أغنية (song)\n`;
+        menuText += `┃ 🔍 .بحث (yts)\n`;
+        menuText += `*╰━━━━━━━━━━━━━━━━━━━╯*\n\n`;
 
-        // 🤖 3. الذكاء الاصطناعي
-        menuText += `🤖 *──❰ .ذكاء / .ai ❱──*\n`;
-        menuText += `🧠 .gpt | ♊ .gemini | 🧠 .deepseek\n`;
-        menuText += `🖼 .imagine | 🎨 .aiart | 🎭 .ghibli\n`;
-        menuText += `🍌 .نانو | 📸 .سكرين | 🔍 .جيميني-حلل\n`;
-        menuText += `✨ .remini | 🪄 .ai-enhance | 🖌️ .colorize\n\n`;
+        // 🛠️ الأدوات
+        menuText += `*╭━━❰ 🛠️ قسم الأدوات ❱━━╮*\n`;
+        menuText += `┃ 🖼️ .ملصق (sticker)\n`;
+        menuText += `┃ 🗣️ .ترجمة (translate)\n`;
+        menuText += `┃ 🔍 .استخراج (ocr)\n`;
+        menuText += `┃ 🎵 .صوت (tomp3)\n`;
+        menuText += `┃ 🏁 .باركود (qrcode)\n`;
+        menuText += `┃ 🌦️ .طقس (weather)\n`;
+        menuText += `┃ 📜 .كلمات (lyrics)\n`;
+        menuText += `┃ 🔢 .حساب (calc)\n`;
+        menuText += `┃ 📤 .رفع (upload)\n`;
+        menuText += `*╰━━━━━━━━━━━━━━━━━━━╯*\n\n`;
 
-        // 🛠️ 4. الأدوات والخدمات
-        menuText += `🛠️ *──❰ .أدوات / .خدمات ❱──*\n`;
-        menuText += `🖼️ .sticker | 🗣️ .ترجمة | 🔍 .ocr\n`;
-        menuText += `🎵 .tomp3 | 🏁 .qrcode | 🌦️ .weather\n`;
-        menuText += `📜 .lyrics | 🔢 .calc | 📤 .upload\n\n`;
+        // 👥 المجموعات
+        menuText += `*╭━━❰ 👥 المجموعات ❱━━╮*\n`;
+        menuText += `┃ 🚫 .طرد (kick)\n`;
+        menuText += `┃ 🆙 .ترقية (promote)\n`;
+        menuText += `┃ ⬇️ .تخفيض (demote)\n`;
+        menuText += `┃ 📢 .منشن (tagall)\n`;
+        menuText += `┃ 🔇 .قفل (mute)\n`;
+        menuText += `┃ 🔓 .فتح (unmute)\n`;
+        menuText += `┃ 🗑️ .حذف (delete)\n`;
+        menuText += `┃ 🛡️ .حماية (antilink)\n`;
+        menuText += `┃ 👋 .ترحيب (welcome)\n`;
+        menuText += `*╰━━━━━━━━━━━━━━━━━━━╯*\n\n`;
 
-        // 👥 5. المجموعات
-        menuText += `👥 *──❰ .كروب / .أدمن ❱──*\n`;
-        menuText += `🚫 .طرد | 🆙 .ترقية | ⬇️ .تخفيض\n`;
-        menuText += `📢 .tagall | 🔇 .mute | 🔓 .open\n`;
-        menuText += `🗑️ .مسح | 🛡️ .antilink | 👋 .welcome\n\n`;
+        // 💰 الاقتصاد
+        menuText += `*╭━━❰ 💰 قسم الاقتصاد ❱━━╮*\n`;
+        menuText += `┃ 👤 .بروفايل (profile)\n`;
+        menuText += `┃ 👤 .حسابي (my)\n`;
+        menuText += `┃ 💰 .يومي (daily)\n`;
+        menuText += `┃ 🏆 .ترتيب (top)\n`;
+        menuText += `┃ 🛒 .متجر (shop)\n`;
+        menuText += `┃ 🎰 .سلوتس (slots)\n`;
+        menuText += `┃ 🃏 .بلاك_جاك (blackjack)\n`;
+        menuText += `*╰━━━━━━━━━━━━━━━━━━━╯*\n\n`;
 
-        // 🎮 6. الألعاب والترفيه
-        menuText += `🎮 *──❰ .ألعاب / .ضحك ❱──*\n`;
-        menuText += `❌ .xo | ❓ .quiz | 🧩 .riddle\n`;
-        menuText += `🎲 .guess | 🤣 .joke | 🐸 .meme\n`;
-        menuText += `💡 .truth | 🔥 .dare | 💘 .ship\n\n`;
+        // 🎮 الألعاب
+        menuText += `*╭━━❰ 🎮 قسم الألعاب ❱━━╮*\n`;
+        menuText += `┃ ❌ .إكس_أو (xo)\n`;
+        menuText += `┃ ❓ .مسابقة (quiz)\n`;
+        menuText += `┃ 🧩 .لغز (riddle)\n`;
+        menuText += `┃ 🎲 .تخمين (guess)\n`;
+        menuText += `┃ 🤣 .نكتة (joke)\n`;
+        menuText += `┃ 🐸 .ميمز (meme)\n`;
+        menuText += `┃ 💡 .صراحة (truth)\n`;
+        menuText += `┃ 🔥 .تحدي (dare)\n`;
+        menuText += `┃ 💘 .حب (ship)\n`;
+        menuText += `*╰━━━━━━━━━━━━━━━━━━━╯*\n\n`;
 
-        // 💰 7. الحساب والاقتصاد
-        menuText += `💰 *──❰ .بروفايل / .بنك ❱──*\n`;
-        menuText += `👤 .بروفايل | 💰 .يومي | 🏆 .ترتيب\n`;
-        menuText += `🛒 .متجر | 🎰 .slots | 🃏 .blackjack\n\n`;
+        // ⚙️ النظام
+        menuText += `*╭━━❰ ⚙️ قسم النظام ❱━━╮*\n`;
+        menuText += `┃ 🟢 .شغال (alive)\n`;
+        menuText += `┃ ⚡ .سرعة (ping)\n`;
+        menuText += `┃ 👑 .مطور (owner)\n`;
+        menuText += `┃ 🌐 .لغة (setlang)\n`;
+        menuText += `┃ 🔒 .وضع (mode)\n`;
+        menuText += `*╰━━━━━━━━━━━━━━━━━━━╯*\n\n`;
 
-        // ⚙️ 8. المطور والنظام
-        menuText += `⚙️ *──❰ .نظام / .مالك ❱──*\n`;
-        menuText += `🟢 .alive | ⚡ .ping | 👑 .owner\n`;
-        menuText += `⚙️ .system | 🌐 .لغة | 🔒 .mode\n\n`;
-
-        menuText += `*━━━━━━━━━━━━━━━━━━━━━━*\n`;
-        menuText += `📢 *القناة:* ${settings.officialChannel}\n`;
-        menuText += `✨ حمزة اعمرني نطور مستقبلك الرقمي! ✨`;
+        menuText += `*┃ 📢 القناة:* ${settings.officialChannel}\n`;
+        menuText += `*┃ ✨ حمزة اعمرني نطور مستقبلك الرقمي! ✨*`;
 
         if (thumbBuffer) {
             await sock.sendMessage(chatId, {
@@ -101,12 +151,12 @@ module.exports = async (sock, chatId, msg, args, commands, userLang) => {
                 caption: menuText,
                 contextInfo: {
                     externalAdReply: {
-                        title: `قائمة أوامر ${botName}`,
-                        body: "حمزة اعمرني - Hamza Amirni",
-                        thumbnail: thumbBuffer,
-                        sourceUrl: settings.officialChannel,
+                        renderLargerThumbnail: true,
+                        title: `🛡️ قائمة أوامر ${botName}`,
+                        body: "𝐇𝐀𝐌𝐙𝐀 𝐀𝐌𝐈𝐑𝐍𝐈",
                         mediaType: 1,
-                        renderLargerThumbnail: true
+                        thumbnail: thumbBuffer,
+                        sourceUrl: settings.officialChannel
                     }
                 }
             }, { quoted: msg });
