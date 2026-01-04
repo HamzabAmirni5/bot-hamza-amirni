@@ -34,7 +34,7 @@ async function handler(sock, chatId, msg, args) {
 
     if (!isQuotedDoc && !isDirectDoc) {
         return await sock.sendMessage(chatId, {
-            text: '📄 *تحويل PDF إلى صور* 📄\n\n📌 *يرجى الرد على ملف PDF بـ:*\n.pdf2img\n\n- سيقوم البوت بتحويل صفحات الملف إلى صور.'
+            text: '*✨ ──────────────── ✨*\n📄 *تحويل PDF إلى صور* 📄\n\n📌 *يرجى الرد على ملف PDF بـ:*\n.pdf2img\n*✨ ──────────────── ✨*'
         }, { quoted: msg });
     }
 
@@ -60,15 +60,14 @@ async function handler(sock, chatId, msg, args) {
 
         const fileName = docMsg.fileName || `file_${Date.now()}.pdf`;
 
-        const waitMsg = await sock.sendMessage(chatId, { text: "🔄 جاري تحويل الملف... قد يستغرق هذا وقتاً حسب حجم الملف." }, { quoted: msg });
+        const waitMsg = await sock.sendMessage(chatId, { text: "🔄 جاري تحويل الملف... قد يستغرق هذا وقتاً" }, { quoted: msg });
 
         const pdfUrl = await uploadToCatbox(buffer, fileName);
 
-        // قائمة بـ APIs محتملة للتحويل (Fallbacks)
         const apis = [
             `https://api.vreden.my.id/api/pdftoimg?url=${encodeURIComponent(pdfUrl)}`,
             `https://api.shizuhub.me/tools/pdftoimg?url=${encodeURIComponent(pdfUrl)}`,
-            `https://obito-mr-apis.vercel.app/api/tools/pdf-to-img?url=${encodeURIComponent(pdfUrl)}` // فرضية
+            `https://obito-mr-apis.vercel.app/api/tools/pdf-to-img?url=${encodeURIComponent(pdfUrl)}`
         ];
 
         let images = [];
@@ -104,21 +103,20 @@ async function handler(sock, chatId, msg, args) {
         await sock.sendMessage(chatId, { delete: waitMsg.key });
 
         if (!success || images.length === 0) {
-            throw new Error("لم نتمكن من تحويل الملف حالياً. جرب لاحقاً أو استعمل ملفاً أصغر.");
+            throw new Error("لم نتمكن من تحويل الملف حالياً.");
         }
 
-        // إرسال أول 10 صفحات لتجنب السبام
         const limit = Math.min(images.length, 10);
 
         for (let i = 0; i < limit; i++) {
             await sock.sendMessage(chatId, {
                 image: { url: images[i] },
-                caption: `📄 الصفحة ${i + 1} من أصل ${images.length}\n*⎔ ⋅ ───━ •﹝🦅﹞• ━─── ⋅ ⎔*`
+                caption: `📄 *الصفحة ${i + 1} من أصل ${images.length}*\n\n*HAMZA AMIRNI*`
             });
         }
 
         if (images.length > limit) {
-            await sock.sendMessage(chatId, { text: `⚠️ تم إرسال أول ${limit} صفحات فقط لتجنب الإزعاج.` }, { quoted: msg });
+            await sock.sendMessage(chatId, { text: `⚠️ تم إرسال أول ${limit} صفحات فقط.` }, { quoted: msg });
         }
 
         await sock.sendMessage(chatId, { react: { text: "✅", key: msg.key } });

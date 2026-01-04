@@ -33,7 +33,6 @@ const analyzeImageWithGemini = async (imageUrl, question) => {
     const encQ = encodeURIComponent(question);
     const encImg = encodeURIComponent(imageUrl);
 
-    // قائمة بالـ APIs المتاحة للتجربة في حال فشل أحدها
     const apis = [
         `https://obito-mr-apis.vercel.app/api/ai/gemini_2.5_flash?txt=${encQ}&img=${encImg}`,
         `https://api.vreden.web.id/api/gemini-vision?image=${encImg}&query=${encQ}`,
@@ -46,7 +45,6 @@ const analyzeImageWithGemini = async (imageUrl, question) => {
             const res = await axios.get(api, { timeout: 30000 });
             let data = res.data;
 
-            // استخراج النص من ردود مختلفة
             let result = typeof data === 'string' ? data : (data.result || data.data || data.content || data.response);
 
             if (result && result !== "{}" && typeof result === 'string') {
@@ -54,11 +52,11 @@ const analyzeImageWithGemini = async (imageUrl, question) => {
             }
         } catch (e) {
             console.error(`Gemini API Failed (${api}):`, e.message);
-            continue; // جرب الـ API اللي موراه
+            continue;
         }
     }
 
-    throw new Error('جميع محاولات تحليل الصورة فشلت. حاول مرة أخرى لاحقاً.');
+    throw new Error('فشل تحليل الصورة حالياً.');
 };
 
 async function handler(sock, chatId, msg, args) {
@@ -81,7 +79,7 @@ async function handler(sock, chatId, msg, args) {
 
     if (!mime.startsWith('image/')) {
         return await sock.sendMessage(chatId, {
-            text: '🔍 *جيميني تحليل الصور* 🔍\n\n📌 *يرجى الرد على صورة بـ:*\n.جيميني-حلل [السؤال]\n\nمثال: .جيميني-حلل ماذا يوجد في الصورة؟'
+            text: '*✨ ──────────────── ✨*\n🤖 *جيميني تحليل الصور* 🤖\n\n📌 *يرجى الرد على صورة بـ:*\n.جيميني-حلل [السؤال]\n*✨ ──────────────── ✨*'
         }, { quoted: msg });
     }
 
@@ -96,17 +94,16 @@ async function handler(sock, chatId, msg, args) {
         if (!img) throw new Error("فشل تحميل الصورة");
         const ext = mime.split('/')[1] || 'jpg';
 
-        // إرسال رسالة انتظار
-        const { key } = await sock.sendMessage(chatId, { text: "🔄 جاري معالجة الصورة وتحليلها..." }, { quoted: msg });
+        const { key } = await sock.sendMessage(chatId, { text: "🔄 جاري التحليل بذكاء جيميني..." }, { quoted: msg });
 
         const imageUrl = await uploadToCatbox(img, ext);
         const result = await analyzeImageWithGemini(imageUrl, question);
 
         await sock.sendMessage(chatId, { delete: key });
 
-        let responseText = `*🤖 تحليل جيميني للصور 🤖*\n\n`;
+        let responseText = `*✨ ───❪ HAMZA AMIRNI ❫─── ✨*\n\n`;
         responseText += `📝 *النتيجة:* \n${result}\n\n`;
-        responseText += `𝐇𝐀𝐌𝐙𝐀 𝐀𝐌𝐈𝐑𝐍𝐈`;
+        responseText += `*HAMZA AMIRNI AI*`;
 
         await sock.sendMessage(chatId, {
             text: responseText,
@@ -117,7 +114,7 @@ async function handler(sock, chatId, msg, args) {
                     thumbnailUrl: imageUrl,
                     sourceUrl: "https://whatsapp.com/channel/0029ValXRoHCnA7yKopcrn1p",
                     mediaType: 1,
-                    renderLargerThumbnail: false
+                    renderLargerThumbnail: true
                 }
             }
         }, { quoted: msg });

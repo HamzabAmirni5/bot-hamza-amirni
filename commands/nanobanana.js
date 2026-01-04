@@ -110,7 +110,7 @@ async function handler(sock, chatId, msg, args) {
         const usedPrefix = global.settings?.prefix || ".";
         const command = args[0] || "نانو";
         return await sock.sendMessage(chatId, {
-            text: `*⎔ ⋅ ───━ •﹝🦅﹞• ━─── ⋅ ⎔*\n*┊🦅┊:•⪼ ⌝خطأ⌞*\n> :•⪼ ⌝يرجى إرسال أو الرد على صورة⌞\n> :•⪼ ⌝مثال: ${usedPrefix}${command} تحويل الوجه إلى أنمي⌞\n*⎔ ⋅ ───━ •﹝🦅﹞• ━─── ⋅ ⎔*`
+            text: `*✨ ──────────────── ✨*\n*⚠️ يرجى إرسال أو الرد على صورة*\n\n*مثال:* ${usedPrefix}${command} تحويل الوجه إلى أنمي\n*✨ ──────────────── ✨*`
         }, { quoted: msg });
     }
 
@@ -119,7 +119,7 @@ async function handler(sock, chatId, msg, args) {
         const usedPrefix = global.settings?.prefix || ".";
         const command = args[0] || "نانو";
         return await sock.sendMessage(chatId, {
-            text: `*⎔ ⋅ ───━ •﹝🦅﹞• ━─── ⋅ ⎔*\n*┊🦅┊:•⪼ ⌝تنبيه⌞*\n> :•⪼ ⌝يرجى كتابة وصف التعديل⌞\n> :•⪼ ⌝مثال: ${usedPrefix}${command} تغيير الملابس إلى بدلة رسمية⌞\n*⎔ ⋅ ───━ •﹝🦅﹞• ━─── ⋅ ⎔*`
+            text: `*✨ ──────────────── ✨*\n*📝 يرجى كتابة وصف التعديل*\n\n*مثال:* ${usedPrefix}${command} تغيير الملابس إلى بدلة رسمية\n*✨ ──────────────── ✨*`
         }, { quoted: msg });
     }
 
@@ -144,15 +144,13 @@ async function handler(sock, chatId, msg, args) {
         const result = await processImageAI(filePath, text);
 
         const caption = `
-*⎔ ⋅ ───━ •﹝🦅﹞• ━─── ⋅ ⎔*
-*┊🦅┊:•⪼ ⌝تم تعديل الصورة بنجاح⌞*
-*⎔ ⋅ ───━ •﹝🦅﹞• ━─── ⋅ ⎔*
+*✨ ───❪ HAMZA AMIRNI ❫─── ✨*
 
-↵📡╏الوصف ↶
-> ⊢${text}╎❯
+✅ *تم تعديل الصورة بنجاح*
 
-*⎔ ⋅ ───━ •﹝🦅﹞• ━─── ⋅ ⎔*
-> 𝐇𝐀𝐌𝐙𝐀 𝐀𝐌𝐈𝐑𝐍𝐈
+� *الوصف:* ${text}
+
+*🚀 تـم الـتـولـيـد بـوسـاطـة نـانـو AI*
 `.trim();
 
         await sock.sendMessage(
@@ -162,7 +160,7 @@ async function handler(sock, chatId, msg, args) {
                 caption: caption,
                 contextInfo: {
                     externalAdReply: {
-                        title: "تعديل الصور بالذكاء الاصطناعي",
+                        title: "Nano AI Image Editor",
                         body: "𝐇𝐀𝐌𝐙𝐀 𝐀𝐌𝐈𝐑𝐍𝐈",
                         thumbnailUrl: result.output,
                         sourceUrl: "https://whatsapp.com/channel/0029ValXRoHCnA7yKopcrn1p",
@@ -183,7 +181,7 @@ async function handler(sock, chatId, msg, args) {
     } catch (e) {
         console.error(e);
         await sock.sendMessage(chatId, {
-            text: `*⎔ ⋅ ───━ •﹝🦅﹞• ━─── ⋅ ⎔*\n*┊🦅┊:•⪼ ⌝فشل التعديل⌞*\n> :•⪼ ⌝تأكد من أن الصورة واضحة والوصف مفهوم⌞\n*⎔ ⋅ ───━ •﹝🦅﹞• ━─── ⋅ ⎔*`
+            text: `*✨ ──────────────── ✨*\n*❌ فشل التعديل*\n\n📌 تأكد من أن الصورة واضحة والوصف مفهوم\n*✨ ──────────────── ✨*`
         }, { quoted: msg });
 
         await sock.sendMessage(chatId, {
