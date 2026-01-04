@@ -1,13 +1,13 @@
 /**
    • الميزة: تعديل الصور بالذكاء الاصطناعي - نانو بنانا
-   • المطور: حمزة اعمرني (����� 𝐀𝐌𝐈𝐑��)
+   • المطور: حمزة اعمرني (𝐇𝐀𝐌𝐙𝐀 𝐀𝐌𝐈𝐑𝐍𝐈)
    • القناة: https://whatsapp.com/channel/0029ValXRoHCnA7yKopcrn1p
 **/
 
-import axios from "axios";
-import CryptoJS from "crypto-js";
-import fs from "fs";
-import path from "path";
+const axios = require("axios");
+const CryptoJS = require("crypto-js");
+const fs = require("fs");
+const path = require("path");
 
 const AES_KEY = "ai-enhancer-web__aes-key";
 const AES_IV = "aienhancer-aesiv";
@@ -56,7 +56,6 @@ async function processImageAI(filePath, prompt) {
         const id = create?.data?.data?.id;
         if (!id) throw new Error("لم يتم العثور على معرف المهمة");
 
-        // Poll for result
         for (let i = 0; i < 15; i++) {
             await new Promise(r => setTimeout(r, 3000));
 
@@ -89,36 +88,32 @@ async function processImageAI(filePath, prompt) {
     }
 }
 
-export default async function handler(sock, chatId, msg, args) {
+async function handler(sock, chatId, msg, args) {
     const q = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage || msg.message;
     const mime = q?.imageMessage?.mimetype || q?.videoMessage?.mimetype || "";
 
-    // Check if image is provided
     if (!mime.startsWith("image/")) {
-        const usedPrefix = msg.prefix || ".";
+        const usedPrefix = settings.prefix || ".";
         const command = args[0] || "نانو";
         return await sock.sendMessage(chatId, {
             text: `*⎔ ⋅ ───━ •﹝🦅﹞• ━─── ⋅ ⎔*\n*┊🦅┊:•⪼ ⌝خطأ⌞*\n> :•⪼ ⌝يرجى إرسال أو الرد على صورة⌞\n> :•⪼ ⌝مثال: ${usedPrefix}${command} تحويل الوجه إلى أنمي⌞\n*⎔ ⋅ ───━ •﹝🦅﹞• ━─── ⋅ ⎔*`
         }, { quoted: msg });
     }
 
-    // Check if prompt is provided
-    const text = args.slice(1).join(" ");
+    const text = args.join(" ");
     if (!text) {
-        const usedPrefix = msg.prefix || ".";
+        const usedPrefix = settings.prefix || ".";
         const command = args[0] || "نانو";
         return await sock.sendMessage(chatId, {
             text: `*⎔ ⋅ ───━ •﹝🦅﹞• ━─── ⋅ ⎔*\n*┊🦅┊:•⪼ ⌝تنبيه⌞*\n> :•⪼ ⌝يرجى كتابة وصف التعديل⌞\n> :•⪼ ⌝مثال: ${usedPrefix}${command} تغيير الملابس إلى بدلة رسمية⌞\n*⎔ ⋅ ───━ •﹝🦅﹞• ━─── ⋅ ⎔*`
         }, { quoted: msg });
     }
 
-    // React with loading
     await sock.sendMessage(chatId, {
         react: { text: "🕒", key: msg.key }
     });
 
     try {
-        // Download the image
         const buffer = await sock.downloadMediaMessage(msg.message?.extendedTextMessage?.contextInfo?.quotedMessage ?
             { message: msg.message.extendedTextMessage.contextInfo.quotedMessage } : msg);
 
@@ -163,7 +158,6 @@ export default async function handler(sock, chatId, msg, args) {
             { quoted: msg }
         );
 
-        // Clean up temp file
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 
         await sock.sendMessage(chatId, {
@@ -182,9 +176,4 @@ export default async function handler(sock, chatId, msg, args) {
     }
 }
 
-export const info = {
-    name: "نانو",
-    aliases: ["editimg", "nanobanana"],
-    category: "ai",
-    description: "تعديل صورة باستعمال نموذج نانو بنانا"
-};
+module.exports = handler;

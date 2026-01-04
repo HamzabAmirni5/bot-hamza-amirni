@@ -4,9 +4,9 @@ By: حمزة اعمرني (Hamza Amirni)
 channel: https://whatsapp.com/channel/0029ValXRoHCnA7yKopcrn1p
 */
 
-import axios from 'axios';
-import fetch from 'node-fetch';
-import FormData from 'form-data';
+const axios = require('axios');
+const fetch = require('node-fetch');
+const FormData = require('form-data');
 
 // رفع إلى Gofile
 const uploadToGofile = async (buffer, ext) => {
@@ -68,11 +68,9 @@ const analyzeImageWithGemini = async (imageUrl, question) => {
     }
 };
 
-export default async function handler(sock, chatId, msg, args) {
-    // إزالة الأمر من النص
-    const question = args.slice(1).join(' ').trim();
+async function handler(sock, chatId, msg, args) {
+    const question = args.join(' ').trim();
 
-    // التحقق من وجود رد على رسالة
     const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
 
     if (!quotedMsg) {
@@ -108,20 +106,17 @@ export default async function handler(sock, chatId, msg, args) {
             text: '🔄 جاري تحليل الصورة...\n⏳ قد يستغرق بعض الوقت'
         }, { quoted: msg });
 
-        // تحميل الصورة
         const img = await sock.downloadMediaMessage({
             message: msg.message.extendedTextMessage.contextInfo.quotedMessage
         });
 
-        if (!img) throw new Error('فشل في تحميل الصورة');
+        if (!img) throw new Error("فشل تحميل الصورة");
 
-        // تحديد امتداد الصورة
         const ext = mime.split('/')[1] || 'jpg';
 
         let imageUrl;
         let uploadSuccess = false;
 
-        // محاولة الرفع إلى Catbox أولاً
         const uploadMsg = await sock.sendMessage(chatId, {
             text: '📤 جاري رفع الصورة...'
         }, { quoted: msg });
@@ -130,8 +125,6 @@ export default async function handler(sock, chatId, msg, args) {
             imageUrl = await uploadToCatbox(img, ext);
             uploadSuccess = true;
         } catch (catboxError) {
-            console.log('Catbox فشل، جاري تجربة Gofile...');
-
             try {
                 imageUrl = await uploadToGofile(img, ext);
                 uploadSuccess = true;
@@ -146,7 +139,6 @@ export default async function handler(sock, chatId, msg, args) {
             throw new Error('فشل في رفع الصورة');
         }
 
-        // تحليل الصورة باستخدام جيميني
         const analysisMsg = await sock.sendMessage(chatId, {
             text: '🤖 جاري تحليل الصورة مع جيميني...'
         }, { quoted: msg });
@@ -161,7 +153,6 @@ export default async function handler(sock, chatId, msg, args) {
 
         await sock.sendMessage(chatId, { delete: waitingMsg.key });
 
-        // تنسيق النتيجة
         let responseText = '*⎔ ⋅ ───━ •﹝🤖 تحليل جيميني ﹞• ━─── ⋅ ⎔*\n\n';
         responseText += `❓ *السؤال:* ${question}\n\n`;
         responseText += `📝 *النتيجة:*\n${result.result}\n\n`;
@@ -192,9 +183,4 @@ export default async function handler(sock, chatId, msg, args) {
     }
 }
 
-export const info = {
-    name: "جيميني-حلل",
-    aliases: ["gemini-pro", "gemini-analyze"],
-    category: "ai",
-    description: "تحليل الصور مع جيميني"
-};
+module.exports = handler;

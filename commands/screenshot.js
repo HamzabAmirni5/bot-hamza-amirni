@@ -4,7 +4,7 @@ By: حمزة اعمرني (Hamza Amirni)
 channel: https://whatsapp.com/channel/0029ValXRoHCnA7yKopcrn1p
 */
 
-import axios from 'axios';
+const axios = require('axios');
 
 async function Screenshot(url) {
     try {
@@ -22,8 +22,8 @@ async function Screenshot(url) {
     }
 }
 
-export default async function handler(sock, chatId, msg, args) {
-    const url = args.slice(1).join(" ").trim();
+async function handler(sock, chatId, msg, args) {
+    const url = args.join(" ").trim();
 
     if (!url) {
         return await sock.sendMessage(chatId, {
@@ -61,7 +61,6 @@ export default async function handler(sock, chatId, msg, args) {
                     externalAdReply: {
                         title: "التقاط شاشة الموقع",
                         body: "𝐇𝐀𝐌𝐙𝐀 𝐀𝐌𝐈𝐑𝐍𝐈",
-                        thumbnailUrl: "https://i.imgur.com/your-thumbnail.jpg",
                         sourceUrl: "https://whatsapp.com/channel/0029ValXRoHCnA7yKopcrn1p",
                         mediaType: 1,
                         renderLargerThumbnail: false
@@ -85,9 +84,4 @@ export default async function handler(sock, chatId, msg, args) {
     }
 }
 
-export const info = {
-    name: "سكرين",
-    aliases: ["screenshot", "ss"],
-    category: "tools",
-    description: "التقاط صورة لموقع ويب"
-};
+module.exports = handler;
