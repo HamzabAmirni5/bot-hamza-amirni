@@ -4,6 +4,7 @@
    • القناة: https://whatsapp.com/channel/0029ValXRoHCnA7yKopcrn1p
 **/
 
+const { downloadMediaMessage } = require("@whiskeysockets/baileys");
 const axios = require("axios");
 const CryptoJS = require("crypto-js");
 const fs = require("fs");
@@ -89,11 +90,24 @@ async function processImageAI(filePath, prompt) {
 }
 
 async function handler(sock, chatId, msg, args) {
-    const q = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage || msg.message;
-    const mime = q?.imageMessage?.mimetype || q?.videoMessage?.mimetype || "";
+    // Determine the target message (handle quoted)
+    let targetMsg = msg;
+    if (msg.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
+        const quotedInfo = msg.message.extendedTextMessage.contextInfo;
+        targetMsg = {
+            key: {
+                remoteJid: chatId,
+                id: quotedInfo.stanzaId,
+                participant: quotedInfo.participant
+            },
+            message: quotedInfo.quotedMessage
+        };
+    }
+
+    const mime = targetMsg.message?.imageMessage?.mimetype || "";
 
     if (!mime.startsWith("image/")) {
-        const usedPrefix = settings.prefix || ".";
+        const usedPrefix = global.settings?.prefix || ".";
         const command = args[0] || "نانو";
         return await sock.sendMessage(chatId, {
             text: `*⎔ ⋅ ───━ •﹝🦅﹞• ━─── ⋅ ⎔*\n*┊🦅┊:•⪼ ⌝خطأ⌞*\n> :•⪼ ⌝يرجى إرسال أو الرد على صورة⌞\n> :•⪼ ⌝مثال: ${usedPrefix}${command} تحويل الوجه إلى أنمي⌞\n*⎔ ⋅ ───━ •﹝🦅﹞• ━─── ⋅ ⎔*`
@@ -102,7 +116,7 @@ async function handler(sock, chatId, msg, args) {
 
     const text = args.join(" ");
     if (!text) {
-        const usedPrefix = settings.prefix || ".";
+        const usedPrefix = global.settings?.prefix || ".";
         const command = args[0] || "نانو";
         return await sock.sendMessage(chatId, {
             text: `*⎔ ⋅ ───━ •﹝🦅﹞• ━─── ⋅ ⎔*\n*┊🦅┊:•⪼ ⌝تنبيه⌞*\n> :•⪼ ⌝يرجى كتابة وصف التعديل⌞\n> :•⪼ ⌝مثال: ${usedPrefix}${command} تغيير الملابس إلى بدلة رسمية⌞\n*⎔ ⋅ ───━ •﹝🦅﹞• ━─── ⋅ ⎔*`
@@ -114,8 +128,10 @@ async function handler(sock, chatId, msg, args) {
     });
 
     try {
-        const buffer = await sock.downloadMediaMessage(msg.message?.extendedTextMessage?.contextInfo?.quotedMessage ?
-            { message: msg.message.extendedTextMessage.contextInfo.quotedMessage } : msg);
+        const buffer = await downloadMediaMessage(targetMsg, 'buffer', {}, {
+            logger: undefined,
+            reuploadRequest: sock.updateMediaMessage
+        });
 
         if (!buffer) throw new Error("فشل تحميل الصورة");
 

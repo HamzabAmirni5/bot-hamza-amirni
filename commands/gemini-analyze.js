@@ -4,6 +4,7 @@ By: حمزة اعمرني (Hamza Amirni)
 channel: https://whatsapp.com/channel/0029ValXRoHCnA7yKopcrn1p
 */
 
+const { downloadMediaMessage } = require("@whiskeysockets/baileys");
 const axios = require('axios');
 const fetch = require('node-fetch');
 const FormData = require('form-data');
@@ -71,9 +72,23 @@ const analyzeImageWithGemini = async (imageUrl, question) => {
 async function handler(sock, chatId, msg, args) {
     const question = args.join(' ').trim();
 
-    const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+    // Determine target message (handle quoted)
+    let targetMsg = msg;
+    if (msg.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
+        const quotedInfo = msg.message.extendedTextMessage.contextInfo;
+        targetMsg = {
+            key: {
+                remoteJid: chatId,
+                id: quotedInfo.stanzaId,
+                participant: quotedInfo.participant
+            },
+            message: quotedInfo.quotedMessage
+        };
+    }
 
-    if (!quotedMsg) {
+    const mime = targetMsg.message?.imageMessage?.mimetype || '';
+
+    if (!mime.startsWith('image/')) {
         return await sock.sendMessage(chatId, {
             text: '*⎔ ⋅ ───━ •﹝🔍 جيميني تحليل الصور ﹞• ━─── ⋅ ⎔*\n\n' +
                 '📝 *الاستخدام:*\n' +
@@ -93,21 +108,14 @@ async function handler(sock, chatId, msg, args) {
         }, { quoted: msg });
     }
 
-    const mime = quotedMsg?.imageMessage?.mimetype || '';
-
-    if (!mime.startsWith('image/')) {
-        return await sock.sendMessage(chatId, {
-            text: '❌ يجب الرد على صورة'
-        }, { quoted: msg });
-    }
-
     try {
         const waitingMsg = await sock.sendMessage(chatId, {
             text: '🔄 جاري تحليل الصورة...\n⏳ قد يستغرق بعض الوقت'
         }, { quoted: msg });
 
-        const img = await sock.downloadMediaMessage({
-            message: msg.message.extendedTextMessage.contextInfo.quotedMessage
+        const img = await downloadMediaMessage(targetMsg, 'buffer', {}, {
+            logger: undefined,
+            reuploadRequest: sock.updateMediaMessage
         });
 
         if (!img) throw new Error("فشل تحميل الصورة");
