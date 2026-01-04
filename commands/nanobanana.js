@@ -127,7 +127,7 @@ async function handler(sock, chatId, msg, args) {
         react: { text: "🕒", key: msg.key }
     });
 
-    const waitMsg = await sock.sendMessage(chatId, { text: "🔄 جاري معالجة طلبك وتعديل الصورة بذكاء نانو... قد يستغرق الأمر بضع ثوانٍ." }, { quoted: msg });
+    const waitMsg = await sock.sendMessage(chatId, { text: "🔄 جاري معالجة طلبك وتعديل الصورة بذكاء نانو... يرجى الانتظار." }, { quoted: msg });
 
     try {
         const buffer = await downloadMediaMessage(targetMsg, 'buffer', {}, {
